@@ -118,9 +118,10 @@ Backend: http://localhost:5000
 
 ## Project Links
 
-- Live Website: Add deployed frontend URL here
-- Frontend Repository: Add GitHub frontend URL here
-- Backend Repository: Add GitHub backend URL here
+- Live Website: https://equiprent-zeta.vercel.app
+- Frontend Repository: https://github.com/sushamaray/equiprent-client
+- Backend Repository: https://github.com/sushamaray/equiprent-server
+- Backend API: https://equiprent-server.onrender.com
 
 ## Testing
 
