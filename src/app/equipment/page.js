@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 const API =
@@ -9,26 +9,60 @@ const API =
 
 const PAGE_SIZE = 9;
 
+const CATEGORIES = [
+  "Construction Equipment",
+  "Photography Equipment",
+  "Vehicles & Transportation",
+  "Agriculture Equipment",
+  "Electronics",
+  "Event Equipment",
+  "Camera",
+  "Tools",
+];
+
 function priceOf(item) {
   return Number(item.rentalPrice ?? item.pricePerDay ?? 0);
 }
 
 export default function EquipmentCatalog() {
   const [equipment, setEquipment] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [location, setLocation] = useState("");
   const [rentalType, setRentalType] = useState("all");
+  const [availability, setAvailability] = useState("true");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
   const [sort, setSort] = useState("newest");
+
   const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    totalPages: 0,
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
 
-    fetch(`${API}/api/equipment?page=1&limit=50`, {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(PAGE_SIZE),
+      availability,
+      sort,
+    });
+
+    if (search.trim()) params.set("search", search.trim());
+    if (category !== "all") params.set("category", category);
+    if (location.trim()) params.set("location", location.trim());
+    if (rentalType !== "all") params.set("rentalType", rentalType);
+    if (minPrice !== "") params.set("minPrice", minPrice);
+    if (maxPrice !== "") params.set("maxPrice", maxPrice);
+
+    fetch(`${API}/api/equipment?${params.toString()}`, {
       cache: "no-store",
       signal: controller.signal,
     })
@@ -46,16 +80,17 @@ export default function EquipmentCatalog() {
       .then((data) => {
         if (controller.signal.aborted) return;
 
-        setEquipment(
-          Array.isArray(data.data) ? data.data : [],
-        );
+        setEquipment(Array.isArray(data.data) ? data.data : []);
+        setPagination(data.pagination || {
+          total: 0,
+          totalPages: 0,
+        });
+        setError("");
       })
       .catch((cause) => {
         if (controller.signal.aborted) return;
 
-        setError(
-          cause.message || "Failed to load equipment.",
-        );
+        setError(cause.message || "Failed to load equipment.");
       })
       .finally(() => {
         if (!controller.signal.aborted) {
@@ -64,104 +99,46 @@ export default function EquipmentCatalog() {
       });
 
     return () => controller.abort();
-  }, []);
+  }, [
+    search,
+    category,
+    location,
+    rentalType,
+    availability,
+    minPrice,
+    maxPrice,
+    sort,
+    page,
+  ]);
 
-  const categories = useMemo(
-    () =>
-      [...new Set(equipment.map((item) => item.category).filter(Boolean))]
-        .sort(),
-    [equipment],
-  );
-
-  const filteredEquipment = useMemo(() => {
-    let result = [...equipment];
-
-    const query = search.trim().toLowerCase();
-    const locationQuery = location.trim().toLowerCase();
-
-    if (query) {
-      result = result.filter((item) =>
-        [
-          item.name,
-          item.description,
-          item.category,
-          item.brand,
-          item.model,
-        ]
-          .filter(Boolean)
-          .some((value) =>
-            value.toLowerCase().includes(query),
-          ),
-      );
-    }
-
-    if (category !== "all") {
-      result = result.filter(
-        (item) => item.category === category,
-      );
-    }
-
-    if (locationQuery) {
-      result = result.filter((item) =>
-        (item.location || "")
-          .toLowerCase()
-          .includes(locationQuery),
-      );
-    }
-
-    if (rentalType !== "all") {
-      result = result.filter(
-        (item) => (item.rentalType || "daily") === rentalType,
-      );
-    }
-
-    if (sort === "price-low") {
-      result.sort((a, b) => priceOf(a) - priceOf(b));
-    }
-
-    if (sort === "price-high") {
-      result.sort((a, b) => priceOf(b) - priceOf(a));
-    }
-
-    if (sort === "name") {
-      result.sort((a, b) =>
-        a.name.localeCompare(b.name),
-      );
-    }
-
-    if (sort === "newest") {
-      result.sort(
-        (a, b) =>
-          new Date(b.createdAt || 0) -
-          new Date(a.createdAt || 0),
-      );
-    }
-
-    return result;
-  }, [equipment, search, category, location, rentalType, sort]);
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredEquipment.length / PAGE_SIZE),
-  );
-
-  const currentItems = filteredEquipment.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE,
-  );
+  function updateFilter(setter, value) {
+    setLoading(true);
+    setter(value);
+    setPage(1);
+  }
 
   function resetFilters() {
+    setLoading(true);
     setSearch("");
     setCategory("all");
     setLocation("");
     setRentalType("all");
+    setAvailability("true");
+    setMinPrice("");
+    setMaxPrice("");
     setSort("newest");
     setPage(1);
   }
 
+  function changePage(nextPage) {
+    setLoading(true);
+    setPage(nextPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   return (
     <main className="min-h-screen bg-[#f7f8f5] text-[#192321]">
-      <header className="sticky top-0 z-10 border-b border-[#e3e8e3] bg-white/95 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-[#e3e8e3] bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-5">
           <Link
             href="/"
@@ -170,23 +147,17 @@ export default function EquipmentCatalog() {
             EquipRent<span className="text-[#df704b]">.</span>
           </Link>
 
-          <div className="flex items-center gap-5 text-sm font-semibold">
+          <nav className="flex items-center gap-5 text-sm font-semibold">
             <Link href="/" className="text-slate-600 hover:text-emerald-800">
               Home
             </Link>
-            <Link
-              href="/my-rentals"
-              className="text-slate-600 hover:text-emerald-800"
-            >
+            <Link href="/my-rentals" className="text-slate-600 hover:text-emerald-800">
               My Rentals
             </Link>
-            <Link
-              href="/sign-in"
-              className="text-[#174f43] hover:underline"
-            >
+            <Link href="/sign-in" className="text-[#174f43] hover:underline">
               Sign In
             </Link>
-          </div>
+          </nav>
         </div>
       </header>
 
@@ -202,13 +173,13 @@ export default function EquipmentCatalog() {
             </h1>
 
             <p className="mt-3 max-w-xl text-sm leading-6 text-[#758079]">
-              Browse approved equipment, compare rental options,
-              and find the right equipment for your next project.
+              Browse verified equipment listings and find the
+              right rental for your next project.
             </p>
           </div>
 
           <span className="text-sm font-semibold text-[#174f43]">
-            {filteredEquipment.length} equipment listings
+            {pagination.total} listings found
           </span>
         </div>
       </section>
@@ -227,17 +198,14 @@ export default function EquipmentCatalog() {
             </button>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <label className="text-xs font-semibold text-slate-600">
-              Search
+              Search by name or description
               <input
                 type="search"
-                placeholder="Search equipment..."
                 value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                }}
+                onChange={(e) => updateFilter(setSearch, e.target.value)}
+                placeholder="Search equipment..."
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-[#fafbf9] px-4 py-3 text-sm font-normal outline-none focus:border-[#174f43]"
               />
             </label>
@@ -246,14 +214,11 @@ export default function EquipmentCatalog() {
               Category
               <select
                 value={category}
-                onChange={(event) => {
-                  setCategory(event.target.value);
-                  setPage(1);
-                }}
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-[#fafbf9] px-4 py-3 text-sm font-normal outline-none focus:border-[#174f43]"
+                onChange={(e) => updateFilter(setCategory, e.target.value)}
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-[#fafbf9] px-4 py-3 text-sm font-normal"
               >
                 <option value="all">All Categories</option>
-                {categories.map((item) => (
+                {CATEGORIES.map((item) => (
                   <option key={item} value={item}>
                     {item}
                   </option>
@@ -265,13 +230,10 @@ export default function EquipmentCatalog() {
               Location
               <input
                 type="search"
-                placeholder="Enter location..."
                 value={location}
-                onChange={(event) => {
-                  setLocation(event.target.value);
-                  setPage(1);
-                }}
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-[#fafbf9] px-4 py-3 text-sm font-normal outline-none focus:border-[#174f43]"
+                onChange={(e) => updateFilter(setLocation, e.target.value)}
+                placeholder="Enter location..."
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-[#fafbf9] px-4 py-3 text-sm font-normal"
               />
             </label>
 
@@ -279,11 +241,8 @@ export default function EquipmentCatalog() {
               Rental Type
               <select
                 value={rentalType}
-                onChange={(event) => {
-                  setRentalType(event.target.value);
-                  setPage(1);
-                }}
-                className="mt-2 w-full rounded-xl border border-slate-200 bg-[#fafbf9] px-4 py-3 text-sm font-normal outline-none focus:border-[#174f43]"
+                onChange={(e) => updateFilter(setRentalType, e.target.value)}
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-[#fafbf9] px-4 py-3 text-sm font-normal"
               >
                 <option value="all">All Rental Types</option>
                 <option value="daily">Daily</option>
@@ -291,21 +250,57 @@ export default function EquipmentCatalog() {
                 <option value="monthly">Monthly</option>
               </select>
             </label>
+
+            <label className="text-xs font-semibold text-slate-600">
+              Availability
+              <select
+                value={availability}
+                onChange={(e) => updateFilter(setAvailability, e.target.value)}
+                className="mt-2 w-full rounded-xl border border-slate-200 bg-[#fafbf9] px-4 py-3 text-sm font-normal"
+              >
+                <option value="true">Available</option>
+                <option value="false">Unavailable</option>
+                <option value="all">All Equipment</option>
+              </select>
+            </label>
+
+            <div className="text-xs font-semibold text-slate-600">
+              Price Range (BDT)
+              <div className="mt-2 grid grid-cols-2 gap-3">
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Min price"
+                  value={minPrice}
+                  onChange={(e) => updateFilter(setMinPrice, e.target.value)}
+                  className="min-w-0 rounded-xl border border-slate-200 bg-[#fafbf9] px-3 py-3 text-sm font-normal"
+                />
+
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Max price"
+                  value={maxPrice}
+                  onChange={(e) => updateFilter(setMaxPrice, e.target.value)}
+                  className="min-w-0 rounded-xl border border-slate-200 bg-[#fafbf9] px-3 py-3 text-sm font-normal"
+                />
+              </div>
+            </div>
           </div>
 
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-5">
             <p className="text-xs text-slate-500">
-              Showing {currentItems.length} of {filteredEquipment.length} results
+              Showing {equipment.length} of {pagination.total} results
             </p>
 
             <label className="flex items-center gap-3 text-xs font-semibold">
               Sort by
               <select
                 value={sort}
-                onChange={(event) => setSort(event.target.value)}
+                onChange={(e) => updateFilter(setSort, e.target.value)}
                 className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
               >
-                <option value="newest">Newest</option>
+                <option value="newest">Recently Added</option>
                 <option value="price-low">Price: Low to High</option>
                 <option value="price-high">Price: High to Low</option>
                 <option value="name">Name: A to Z</option>
@@ -329,14 +324,14 @@ export default function EquipmentCatalog() {
           <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center text-red-700">
             {error}
           </div>
-        ) : currentItems.length === 0 ? (
+        ) : equipment.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-16 text-center">
-            <h2 className="text-xl font-bold">
-              No equipment found
-            </h2>
+            <h2 className="text-xl font-bold">No equipment found</h2>
+
             <p className="mt-3 text-sm text-slate-500">
               Try changing your search or filters.
             </p>
+
             <button
               type="button"
               onClick={resetFilters}
@@ -347,7 +342,7 @@ export default function EquipmentCatalog() {
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {currentItems.map((item) => (
+            {equipment.map((item) => (
               <article
                 key={item._id}
                 className="overflow-hidden rounded-2xl border border-[#e5eae5] bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
@@ -359,14 +354,16 @@ export default function EquipmentCatalog() {
                       src={item.image}
                       alt={item.name}
                       className="h-full w-full object-cover"
-                      onError={(event) => {
-                        event.currentTarget.style.display = "none";
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
                       }}
                     />
                   )}
 
                   <span className="absolute left-4 top-4 rounded-full bg-white px-3 py-2 text-[10px] font-bold text-emerald-800 shadow-sm">
-                    {item.availableQuantity ?? 1} available
+                    {item.availability
+                      ? `${item.availableQuantity ?? 1} available`
+                      : "Unavailable"}
                   </span>
                 </div>
 
@@ -388,6 +385,7 @@ export default function EquipmentCatalog() {
                       <p className="text-xl font-bold text-[#174f43]">
                         ৳{priceOf(item).toLocaleString("en-BD")}
                       </p>
+
                       <p className="text-[10px] text-slate-500">
                         per {item.rentalType || "day"}
                       </p>
@@ -395,7 +393,7 @@ export default function EquipmentCatalog() {
 
                     <Link
                       href={`/equipment/${item._id}`}
-                      className="rounded-xl bg-[#174f43] px-4 py-3 text-xs font-bold text-white transition hover:bg-[#236959]"
+                      className="rounded-xl bg-[#174f43] px-4 py-3 text-xs font-bold text-white hover:bg-[#236959]"
                     >
                       View Details →
                     </Link>
@@ -406,31 +404,25 @@ export default function EquipmentCatalog() {
           </div>
         )}
 
-        {!loading && !error && totalPages > 1 && (
+        {!loading && !error && pagination.totalPages > 1 && (
           <div className="mt-10 flex items-center justify-center gap-5">
             <button
               type="button"
               disabled={page <= 1}
-              onClick={() => {
-                setPage((value) => value - 1);
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
+              onClick={() => changePage(page - 1)}
               className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold disabled:opacity-40"
             >
               Previous
             </button>
 
             <span className="text-sm font-semibold text-slate-600">
-              {page} / {totalPages}
+              {page} / {pagination.totalPages}
             </span>
 
             <button
               type="button"
-              disabled={page >= totalPages}
-              onClick={() => {
-                setPage((value) => value + 1);
-                window.scrollTo({ top: 0, behavior: "smooth" });
-              }}
+              disabled={page >= pagination.totalPages}
+              onClick={() => changePage(page + 1)}
               className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold disabled:opacity-40"
             >
               Next
