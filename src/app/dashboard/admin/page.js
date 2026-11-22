@@ -7,38 +7,98 @@ import Link from "next/link";
 const API =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
+const money = (value) =>
+  `৳${Number(value || 0).toLocaleString("en-BD")}`;
+
 async function getToken() {
   const response = await fetch(`${API}/api/auth/token`, {
     credentials: "include",
     cache: "no-store",
   });
 
-  if (!response.ok) {
-    throw new Error("Please sign in with your Admin account.");
-  }
-
   const data = await response.json();
 
-  if (!data.token) {
-    throw new Error("Authentication token unavailable.");
+  if (!response.ok || !data.token) {
+    throw new Error("Please sign in with your Admin account.");
   }
 
   return data.token;
 }
 
-function priceOf(item) {
-  return item.rentalPrice ?? item.pricePerDay ?? 0;
+function StatCard({ title, value, description, accent }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <p className="text-sm font-medium text-slate-500">{title}</p>
+      <p className={`mt-4 text-3xl font-bold ${accent || "text-slate-900"}`}>
+        {value}
+      </p>
+      <p className="mt-2 text-xs text-slate-500">{description}</p>
+    </div>
+  );
+}
+
+function MonthlyChart({ data }) {
+  const max = Math.max(1, ...data.map((item) => item.value));
+
+  return (
+    <div>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-bold">Monthly Bookings</h3>
+          <p className="mt-1 text-xs text-slate-500">
+            Booking activity over the last six months
+          </p>
+        </div>
+        <span className="rounded-full bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+          Last 6 months
+        </span>
+      </div>
+
+      <div className="flex h-56 items-end justify-around gap-3 border-b border-slate-200 px-2">
+        {data.map((item) => (
+          <div
+            key={item.month}
+            className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-2"
+          >
+            <span className="text-xs font-bold text-slate-600">
+              {item.value}
+            </span>
+
+            <div
+              className="w-full max-w-12 rounded-t-lg bg-emerald-700 transition-all duration-500"
+              style={{
+                height: `${Math.max(5, (item.value / max) * 145)}px`,
+              }}
+              title={`${item.month}: ${item.value} bookings`}
+            />
+
+            <span className="pb-2 text-center text-[10px] text-slate-500">
+              {item.month.split(" ")[0]}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {data.every((item) => item.value === 0) && (
+        <p className="mt-4 text-center text-xs text-slate-500">
+          No bookings recorded during this period.
+        </p>
+      )}
+    </div>
+  );
 }
 
 export default function AdminDashboard() {
+  const [analytics, setAnalytics] = useState(null);
   const [items, setItems] = useState([]);
+
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [refresh, setRefresh] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState(null);
+  const [refresh, setRefresh] = useState(0);
+
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -51,52 +111,71 @@ export default function AdminDashboard() {
       signal: controller.signal,
     })
       .then(async (response) => {
-        if (!response.ok) {
-          throw new Error("Please sign in with your Admin account.");
-        }
-
         const data = await response.json();
 
-        if (!data.token) {
-          throw new Error("Authentication token unavailable.");
+        if (!response.ok || !data.token) {
+          throw new Error("Please sign in with your Admin account.");
         }
 
         return data.token;
       })
       .then(async (token) => {
-        const response = await fetch(
-          `${API}/api/equipment/admin/pending?page=${page}&limit=10`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            cache: "no-store",
-            signal: controller.signal,
-          },
-        );
+        const headers = {
+          Authorization: `Bearer ${token}`,
+        };
 
-        const data = await response.json().catch(() => ({}));
+        const [analyticsResponse, equipmentResponse] =
+          await Promise.all([
+            fetch(`${API}/api/analytics/admin`, {
+              headers,
+              cache: "no-store",
+              signal: controller.signal,
+            }),
 
-        if (!response.ok) {
+            fetch(
+              `${API}/api/equipment/admin/pending?page=${page}&limit=10`,
+              {
+                headers,
+                cache: "no-store",
+                signal: controller.signal,
+              },
+            ),
+          ]);
+
+        const [analyticsData, equipmentData] =
+          await Promise.all([
+            analyticsResponse.json(),
+            equipmentResponse.json(),
+          ]);
+
+        if (!analyticsResponse.ok) {
           throw new Error(
-            data.message || "Could not load pending equipment.",
+            analyticsData.message || "Failed to load analytics.",
           );
         }
 
-        return data;
+        if (!equipmentResponse.ok) {
+          throw new Error(
+            equipmentData.message || "Failed to load equipment.",
+          );
+        }
+
+        return { analyticsData, equipmentData };
       })
-      .then((data) => {
+      .then(({ analyticsData, equipmentData }) => {
         if (controller.signal.aborted) return;
 
-        setItems(Array.isArray(data.data) ? data.data : []);
-        setTotal(data.pagination?.total ?? 0);
-        setTotalPages(data.pagination?.totalPages ?? 1);
+        setAnalytics(analyticsData.data);
+        setItems(equipmentData.data || []);
+        setTotalPages(
+          Math.max(1, equipmentData.pagination?.totalPages || 1),
+        );
         setError("");
       })
       .catch((cause) => {
         if (controller.signal.aborted) return;
 
-        setError(cause.message || "Failed to load equipment.");
+        setError(cause.message || "Dashboard loading failed.");
       })
       .finally(() => {
         if (!controller.signal.aborted) {
@@ -134,16 +213,16 @@ export default function AdminDashboard() {
         },
       );
 
-      const data = await response.json().catch(() => ({}));
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.message || `Equipment ${action} failed.`,
-        );
+        throw new Error(data.message || "Equipment review failed.");
       }
 
       setMessage(
-        `${item.name} successfully ${action === "approve" ? "approved" : "rejected"}.`,
+        `${item.name} successfully ${
+          action === "approve" ? "approved" : "rejected"
+        }.`,
       );
 
       setLoading(true);
@@ -163,6 +242,7 @@ export default function AdminDashboard() {
   return (
     <main className="min-h-screen bg-[#f7f8f5] px-4 py-8 text-[#192321] sm:px-6">
       <div className="mx-auto max-w-7xl">
+
         <header className="mb-10 flex flex-wrap items-center justify-between gap-4 border-b border-[#e3e8e3] pb-6">
           <Link
             href="/"
@@ -171,12 +251,21 @@ export default function AdminDashboard() {
             EquipRent<span className="text-[#df704b]">.</span>
           </Link>
 
-          <Link
-            href="/"
-            className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold"
-          >
-            View Website
-          </Link>
+          <div className="flex gap-3">
+            <Link
+              href="/"
+              className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold"
+            >
+              View Website
+            </Link>
+
+            <Link
+              href="/sign-in"
+              className="rounded-full bg-[#174f43] px-5 py-2 text-sm font-semibold text-white"
+            >
+              Sign In
+            </Link>
+          </div>
         </header>
 
         <section className="mb-9">
@@ -189,37 +278,8 @@ export default function AdminDashboard() {
           </h1>
 
           <p className="mt-3 text-sm text-slate-600">
-            Review equipment submissions and manage marketplace approval.
+            Monitor marketplace performance and manage equipment approvals.
           </p>
-        </section>
-
-        <section className="mb-8 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6">
-            <p className="text-xs font-semibold text-slate-500">
-              Pending Equipment
-            </p>
-            <p className="mt-3 text-3xl font-bold text-amber-700">
-              {total}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-6">
-            <p className="text-xs font-semibold text-slate-500">
-              Current Page
-            </p>
-            <p className="mt-3 text-3xl font-bold">
-              {page} / {totalPages}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-6">
-            <p className="text-xs font-semibold text-slate-500">
-              Review Queue
-            </p>
-            <p className="mt-3 text-3xl font-bold text-emerald-800">
-              {items.length}
-            </p>
-          </div>
         </section>
 
         {error && (
@@ -240,34 +300,104 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {loading && !analytics ? (
+          <div className="rounded-2xl border bg-white p-12 text-center text-slate-500">
+            Loading dashboard analytics...
+          </div>
+        ) : analytics && (
+          <>
+            <section className="mb-9">
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold">Platform Overview</h2>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Live statistics from MongoDB
+                  </p>
+                </div>
+
+                <span className="rounded-full bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">
+                  Database Analytics
+                </span>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <StatCard
+                  title="Total Users"
+                  value={analytics.totalUsers}
+                  description="Registered platform users"
+                />
+
+                <StatCard
+                  title="Total Equipment"
+                  value={analytics.totalEquipment}
+                  description="Non-deleted equipment listings"
+                  accent="text-emerald-800"
+                />
+
+                <StatCard
+                  title="Total Bookings"
+                  value={analytics.totalBookings}
+                  description="All recorded rental bookings"
+                />
+
+                <StatCard
+                  title="Pending Approvals"
+                  value={analytics.pendingApprovals}
+                  description="Equipment awaiting admin review"
+                  accent="text-amber-700"
+                />
+
+                <StatCard
+                  title="Completed Rentals"
+                  value={analytics.completedRentals}
+                  description="Bookings marked completed"
+                  accent="text-emerald-800"
+                />
+
+                <StatCard
+                  title="Total Revenue"
+                  value={money(analytics.totalRevenue)}
+                  description="Verified paid transactions in BDT"
+                  accent="text-emerald-800"
+                />
+              </div>
+            </section>
+
+            <section className="mb-9 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+              <MonthlyChart
+                data={analytics.monthlyBookings || []}
+              />
+            </section>
+          </>
+        )}
+
         <section className="rounded-3xl border border-[#e3e8e3] bg-white p-5 shadow-sm sm:p-8">
           <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-bold">
                 Equipment Approval Queue
               </h2>
+
               <p className="mt-1 text-xs text-slate-500">
-                Review each submission before it becomes public.
+                Review owner submissions before publication.
               </p>
             </div>
 
             <span className="rounded-full bg-amber-50 px-4 py-2 text-xs font-bold text-amber-800">
-              {total} pending
+              {items.length} pending on this page
             </span>
           </div>
 
-          {loading ? (
-            <p className="py-14 text-center text-slate-500">
-              Loading pending equipment...
+          {loading && !analytics ? (
+            <p className="py-12 text-center text-slate-500">
+              Loading equipment...
             </p>
           ) : items.length === 0 ? (
-            <div className="py-16 text-center">
-              <div className="text-4xl">✓</div>
-              <h3 className="mt-4 text-xl font-bold">
-                All caught up!
-              </h3>
+            <div className="py-14 text-center">
+              <div className="text-4xl text-emerald-700">✓</div>
+              <h3 className="mt-4 text-xl font-bold">All caught up!</h3>
               <p className="mt-2 text-sm text-slate-500">
-                There is no equipment waiting for approval.
+                No equipment is waiting for approval.
               </p>
             </div>
           ) : (
@@ -293,20 +423,17 @@ export default function AdminDashboard() {
                       )}
                     </div>
 
-                    <div className="min-w-0 p-5 sm:p-6">
+                    <div className="p-5 sm:p-6">
                       <div className="mb-3 flex flex-wrap items-center gap-2">
                         <span className="rounded-full bg-amber-100 px-3 py-1 text-[10px] font-bold uppercase text-amber-800">
                           Pending Review
                         </span>
-
                         <span className="text-xs text-slate-500">
                           {item.category}
                         </span>
                       </div>
 
-                      <h3 className="text-xl font-bold">
-                        {item.name}
-                      </h3>
+                      <h3 className="text-xl font-bold">{item.name}</h3>
 
                       <p className="mt-2 text-sm leading-6 text-slate-600">
                         {item.description}
@@ -315,15 +442,14 @@ export default function AdminDashboard() {
                       <div className="mt-4 grid grid-cols-2 gap-4 text-xs sm:grid-cols-3">
                         <div>
                           <p className="text-slate-500">Location</p>
-                          <p className="mt-1 font-semibold">
-                            {item.location}
-                          </p>
+                          <p className="mt-1 font-semibold">{item.location}</p>
                         </div>
 
                         <div>
                           <p className="text-slate-500">Rental Price</p>
                           <p className="mt-1 font-semibold">
-                            ৳{Number(priceOf(item)).toLocaleString("en-BD")} / {item.rentalType || "daily"}
+                            {money(item.rentalPrice ?? item.pricePerDay)}
+                            / {item.rentalType || "daily"}
                           </p>
                         </div>
 
@@ -331,22 +457,6 @@ export default function AdminDashboard() {
                           <p className="text-slate-500">Quantity</p>
                           <p className="mt-1 font-semibold">
                             {item.availableQuantity ?? 1}
-                          </p>
-                        </div>
-
-                        <div>
-                          <p className="text-slate-500">Condition</p>
-                          <p className="mt-1 font-semibold capitalize">
-                            {item.condition || "Not specified"}
-                          </p>
-                        </div>
-
-                        <div>
-                          <p className="text-slate-500">Submitted</p>
-                          <p className="mt-1 font-semibold">
-                            {item.createdAt
-                              ? new Date(item.createdAt).toLocaleDateString()
-                              : "N/A"}
                           </p>
                         </div>
                       </div>
@@ -391,7 +501,7 @@ export default function AdminDashboard() {
               </button>
 
               <span className="text-sm text-slate-600">
-                {page} / {totalPages}
+                Page {page} of {totalPages}
               </span>
 
               <button
@@ -407,7 +517,7 @@ export default function AdminDashboard() {
         </section>
 
         <footer className="py-8 text-center text-xs text-slate-500">
-          EquipRent Administration · Equipment Review
+          EquipRent Administration · Live Platform Analytics
         </footer>
       </div>
     </main>
