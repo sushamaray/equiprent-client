@@ -20,7 +20,7 @@ function safeDestination(value) {
 function roleDestination(role) {
   if (role === "admin") return "/dashboard/admin";
   if (role === "owner") return "/dashboard/owner";
-  return "/my-rentals";
+  return "/";
 }
 
 function SignInForm() {
