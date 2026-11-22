@@ -29,9 +29,15 @@ function StatCard({ title, value, description, accent }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <p className="text-sm font-medium text-slate-500">{title}</p>
-      <p className={`mt-4 text-3xl font-bold ${accent || "text-slate-900"}`}>
+
+      <p
+        className={`mt-4 text-3xl font-bold ${
+          accent || "text-slate-900"
+        }`}
+      >
         {value}
       </p>
+
       <p className="mt-2 text-xs text-slate-500">{description}</p>
     </div>
   );
@@ -45,10 +51,12 @@ function MonthlyChart({ data }) {
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h3 className="text-lg font-bold">Monthly Bookings</h3>
+
           <p className="mt-1 text-xs text-slate-500">
             Booking activity over the last six months
           </p>
         </div>
+
         <span className="rounded-full bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
           Last 6 months
         </span>
@@ -67,7 +75,10 @@ function MonthlyChart({ data }) {
             <div
               className="w-full max-w-12 rounded-t-lg bg-emerald-700 transition-all duration-500"
               style={{
-                height: `${Math.max(5, (item.value / max) * 145)}px`,
+                height: `${Math.max(
+                  5,
+                  (item.value / max) * 145
+                )}px`,
               }}
               title={`${item.month}: ${item.value} bookings`}
             />
@@ -114,7 +125,9 @@ export default function AdminDashboard() {
         const data = await response.json();
 
         if (!response.ok || !data.token) {
-          throw new Error("Please sign in with your Admin account.");
+          throw new Error(
+            "Please sign in with your Admin account."
+          );
         }
 
         return data.token;
@@ -138,7 +151,7 @@ export default function AdminDashboard() {
                 headers,
                 cache: "no-store",
                 signal: controller.signal,
-              },
+              }
             ),
           ]);
 
@@ -150,13 +163,13 @@ export default function AdminDashboard() {
 
         if (!analyticsResponse.ok) {
           throw new Error(
-            analyticsData.message || "Failed to load analytics.",
+            analyticsData.message || "Failed to load analytics."
           );
         }
 
         if (!equipmentResponse.ok) {
           throw new Error(
-            equipmentData.message || "Failed to load equipment.",
+            equipmentData.message || "Failed to load equipment."
           );
         }
 
@@ -167,15 +180,22 @@ export default function AdminDashboard() {
 
         setAnalytics(analyticsData.data);
         setItems(equipmentData.data || []);
+
         setTotalPages(
-          Math.max(1, equipmentData.pagination?.totalPages || 1),
+          Math.max(
+            1,
+            equipmentData.pagination?.totalPages || 1
+          )
         );
+
         setError("");
       })
       .catch((cause) => {
         if (controller.signal.aborted) return;
 
-        setError(cause.message || "Dashboard loading failed.");
+        setError(
+          cause.message || "Dashboard loading failed."
+        );
       })
       .finally(() => {
         if (!controller.signal.aborted) {
@@ -210,25 +230,29 @@ export default function AdminDashboard() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        },
+        }
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Equipment review failed.");
+        throw new Error(
+          data.message || "Equipment review failed."
+        );
       }
 
       setMessage(
         `${item.name} successfully ${
           action === "approve" ? "approved" : "rejected"
-        }.`,
+        }.`
       );
 
       setLoading(true);
       setRefresh((value) => value + 1);
     } catch (cause) {
-      setError(cause.message || "Equipment review failed.");
+      setError(
+        cause.message || "Equipment review failed."
+      );
     } finally {
       setBusyId(null);
     }
@@ -243,15 +267,33 @@ export default function AdminDashboard() {
     <main className="min-h-screen bg-[#f7f8f5] px-4 py-8 text-[#192321] sm:px-6">
       <div className="mx-auto max-w-7xl">
 
+        {/* Header */}
         <header className="mb-10 flex flex-wrap items-center justify-between gap-4 border-b border-[#e3e8e3] pb-6">
           <Link
             href="/"
             className="text-2xl font-extrabold tracking-tight text-[#174f43]"
           >
-            EquipRent<span className="text-[#df704b]">.</span>
+            EquipRent
+            <span className="text-[#df704b]">.</span>
           </Link>
 
-          <div className="flex gap-3">
+          {/* Updated Admin Navigation */}
+          <div className="flex flex-wrap gap-3">
+
+            <Link
+              href="/dashboard/admin/manage"
+              className="rounded-full bg-[#174f43] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#236959]"
+            >
+              Manage Platform
+            </Link>
+
+            <Link
+              href="/dashboard/profile"
+              className="rounded-full border border-[#174f43] bg-white px-5 py-2 text-sm font-semibold text-[#174f43] transition hover:bg-emerald-50"
+            >
+              My Profile
+            </Link>
+
             <Link
               href="/"
               className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold"
@@ -259,15 +301,10 @@ export default function AdminDashboard() {
               View Website
             </Link>
 
-            <Link
-              href="/sign-in"
-              className="rounded-full bg-[#174f43] px-5 py-2 text-sm font-semibold text-white"
-            >
-              Sign In
-            </Link>
           </div>
         </header>
 
+        {/* Dashboard Heading */}
         <section className="mb-9">
           <p className="text-xs font-bold uppercase tracking-[2px] text-[#d97752]">
             ADMINISTRATION
@@ -282,6 +319,7 @@ export default function AdminDashboard() {
           </p>
         </section>
 
+        {/* Messages */}
         {error && (
           <div
             role="alert"
@@ -300,6 +338,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Analytics */}
         {loading && !analytics ? (
           <div className="rounded-2xl border bg-white p-12 text-center text-slate-500">
             Loading dashboard analytics...
@@ -309,7 +348,10 @@ export default function AdminDashboard() {
             <section className="mb-9">
               <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-xl font-bold">Platform Overview</h2>
+                  <h2 className="text-xl font-bold">
+                    Platform Overview
+                  </h2>
+
                   <p className="mt-1 text-xs text-slate-500">
                     Live statistics from MongoDB
                   </p>
@@ -363,6 +405,7 @@ export default function AdminDashboard() {
               </div>
             </section>
 
+            {/* Monthly Bookings Chart */}
             <section className="mb-9 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
               <MonthlyChart
                 data={analytics.monthlyBookings || []}
@@ -371,6 +414,7 @@ export default function AdminDashboard() {
           </>
         )}
 
+        {/* Equipment Approval Queue */}
         <section className="rounded-3xl border border-[#e3e8e3] bg-white p-5 shadow-sm sm:p-8">
           <div className="mb-7 flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -394,8 +438,14 @@ export default function AdminDashboard() {
             </p>
           ) : items.length === 0 ? (
             <div className="py-14 text-center">
-              <div className="text-4xl text-emerald-700">✓</div>
-              <h3 className="mt-4 text-xl font-bold">All caught up!</h3>
+              <div className="text-4xl text-emerald-700">
+                ✓
+              </div>
+
+              <h3 className="mt-4 text-xl font-bold">
+                All caught up!
+              </h3>
+
               <p className="mt-2 text-sm text-slate-500">
                 No equipment is waiting for approval.
               </p>
@@ -428,12 +478,15 @@ export default function AdminDashboard() {
                         <span className="rounded-full bg-amber-100 px-3 py-1 text-[10px] font-bold uppercase text-amber-800">
                           Pending Review
                         </span>
+
                         <span className="text-xs text-slate-500">
                           {item.category}
                         </span>
                       </div>
 
-                      <h3 className="text-xl font-bold">{item.name}</h3>
+                      <h3 className="text-xl font-bold">
+                        {item.name}
+                      </h3>
 
                       <p className="mt-2 text-sm leading-6 text-slate-600">
                         {item.description}
@@ -441,20 +494,35 @@ export default function AdminDashboard() {
 
                       <div className="mt-4 grid grid-cols-2 gap-4 text-xs sm:grid-cols-3">
                         <div>
-                          <p className="text-slate-500">Location</p>
-                          <p className="mt-1 font-semibold">{item.location}</p>
-                        </div>
+                          <p className="text-slate-500">
+                            Location
+                          </p>
 
-                        <div>
-                          <p className="text-slate-500">Rental Price</p>
                           <p className="mt-1 font-semibold">
-                            {money(item.rentalPrice ?? item.pricePerDay)}
-                            / {item.rentalType || "daily"}
+                            {item.location}
                           </p>
                         </div>
 
                         <div>
-                          <p className="text-slate-500">Quantity</p>
+                          <p className="text-slate-500">
+                            Rental Price
+                          </p>
+
+                          <p className="mt-1 font-semibold">
+                            {money(
+                              item.rentalPrice ??
+                                item.pricePerDay
+                            )}
+                            {" / "}
+                            {item.rentalType || "daily"}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-slate-500">
+                            Quantity
+                          </p>
+
                           <p className="mt-1 font-semibold">
                             {item.availableQuantity ?? 1}
                           </p>
@@ -465,7 +533,9 @@ export default function AdminDashboard() {
                         <button
                           type="button"
                           disabled={Boolean(busyId)}
-                          onClick={() => reviewEquipment(item, "approve")}
+                          onClick={() =>
+                            reviewEquipment(item, "approve")
+                          }
                           className="rounded-xl bg-emerald-800 px-6 py-3 text-sm font-bold text-white hover:bg-emerald-700 disabled:opacity-50"
                         >
                           {busyId === item._id
@@ -476,7 +546,9 @@ export default function AdminDashboard() {
                         <button
                           type="button"
                           disabled={Boolean(busyId)}
-                          onClick={() => reviewEquipment(item, "reject")}
+                          onClick={() =>
+                            reviewEquipment(item, "reject")
+                          }
                           className="rounded-xl border border-red-200 px-6 py-3 text-sm font-bold text-red-700 hover:bg-red-50 disabled:opacity-50"
                         >
                           Reject
@@ -489,6 +561,7 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {/* Pagination */}
           {!loading && totalPages > 1 && (
             <div className="mt-8 flex items-center justify-center gap-5">
               <button
@@ -506,7 +579,9 @@ export default function AdminDashboard() {
 
               <button
                 type="button"
-                disabled={page >= totalPages || Boolean(busyId)}
+                disabled={
+                  page >= totalPages || Boolean(busyId)
+                }
                 onClick={() => changePage(page + 1)}
                 className="rounded-xl border px-5 py-2 text-sm font-semibold disabled:opacity-40"
               >
@@ -516,9 +591,11 @@ export default function AdminDashboard() {
           )}
         </section>
 
+        {/* Footer */}
         <footer className="py-8 text-center text-xs text-slate-500">
           EquipRent Administration · Live Platform Analytics
         </footer>
+
       </div>
     </main>
   );
