@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import BookingModal from "@/components/BookingModal";
 
 const API =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -26,6 +27,7 @@ function priceOf(item) {
 
 export default function EquipmentCatalog() {
   const [equipment, setEquipment] = useState([]);
+  const [selected, setSelected] = useState(null);
 
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
@@ -57,8 +59,12 @@ export default function EquipmentCatalog() {
 
     if (search.trim()) params.set("search", search.trim());
     if (category !== "all") params.set("category", category);
-    if (location.trim()) params.set("location", location.trim());
-    if (rentalType !== "all") params.set("rentalType", rentalType);
+    if (location.trim()) {
+      params.set("location", location.trim());
+    }
+    if (rentalType !== "all") {
+      params.set("rentalType", rentalType);
+    }
     if (minPrice !== "") params.set("minPrice", minPrice);
     if (maxPrice !== "") params.set("maxPrice", maxPrice);
 
@@ -67,7 +73,7 @@ export default function EquipmentCatalog() {
       signal: controller.signal,
     })
       .then(async (response) => {
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
 
         if (!response.ok) {
           throw new Error(
@@ -81,16 +87,22 @@ export default function EquipmentCatalog() {
         if (controller.signal.aborted) return;
 
         setEquipment(Array.isArray(data.data) ? data.data : []);
-        setPagination(data.pagination || {
-          total: 0,
-          totalPages: 0,
-        });
+        setPagination(
+          data.pagination || {
+            total: 0,
+            totalPages: 0,
+          },
+        );
         setError("");
       })
       .catch((cause) => {
         if (controller.signal.aborted) return;
 
-        setError(cause.message || "Failed to load equipment.");
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "Failed to load equipment.",
+        );
       })
       .finally(() => {
         if (!controller.signal.aborted) {
@@ -147,14 +159,25 @@ export default function EquipmentCatalog() {
             EquipRent<span className="text-[#df704b]">.</span>
           </Link>
 
-          <nav className="flex items-center gap-5 text-sm font-semibold">
-            <Link href="/" className="text-slate-600 hover:text-emerald-800">
+          <nav className="flex flex-wrap items-center gap-4 text-sm font-semibold">
+            <Link
+              href="/"
+              className="text-slate-600 hover:text-emerald-800"
+            >
               Home
             </Link>
-            <Link href="/my-rentals" className="text-slate-600 hover:text-emerald-800">
+
+            <Link
+              href="/my-rentals"
+              className="text-slate-600 hover:text-emerald-800"
+            >
               My Rentals
             </Link>
-            <Link href="/sign-in" className="text-[#174f43] hover:underline">
+
+            <Link
+              href="/sign-in"
+              className="text-[#174f43] hover:underline"
+            >
               Sign In
             </Link>
           </nav>
@@ -187,7 +210,9 @@ export default function EquipmentCatalog() {
       <section className="mx-auto max-w-7xl px-5 pb-5">
         <div className="rounded-2xl border border-[#e3e8e3] bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-lg font-bold">Find Equipment</h2>
+            <h2 className="text-lg font-bold">
+              Find Equipment
+            </h2>
 
             <button
               type="button"
@@ -204,7 +229,9 @@ export default function EquipmentCatalog() {
               <input
                 type="search"
                 value={search}
-                onChange={(e) => updateFilter(setSearch, e.target.value)}
+                onChange={(event) =>
+                  updateFilter(setSearch, event.target.value)
+                }
                 placeholder="Search equipment..."
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-[#fafbf9] px-4 py-3 text-sm font-normal outline-none focus:border-[#174f43]"
               />
@@ -214,7 +241,9 @@ export default function EquipmentCatalog() {
               Category
               <select
                 value={category}
-                onChange={(e) => updateFilter(setCategory, e.target.value)}
+                onChange={(event) =>
+                  updateFilter(setCategory, event.target.value)
+                }
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-[#fafbf9] px-4 py-3 text-sm font-normal"
               >
                 <option value="all">All Categories</option>
@@ -231,7 +260,9 @@ export default function EquipmentCatalog() {
               <input
                 type="search"
                 value={location}
-                onChange={(e) => updateFilter(setLocation, e.target.value)}
+                onChange={(event) =>
+                  updateFilter(setLocation, event.target.value)
+                }
                 placeholder="Enter location..."
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-[#fafbf9] px-4 py-3 text-sm font-normal"
               />
@@ -241,7 +272,9 @@ export default function EquipmentCatalog() {
               Rental Type
               <select
                 value={rentalType}
-                onChange={(e) => updateFilter(setRentalType, e.target.value)}
+                onChange={(event) =>
+                  updateFilter(setRentalType, event.target.value)
+                }
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-[#fafbf9] px-4 py-3 text-sm font-normal"
               >
                 <option value="all">All Rental Types</option>
@@ -255,7 +288,9 @@ export default function EquipmentCatalog() {
               Availability
               <select
                 value={availability}
-                onChange={(e) => updateFilter(setAvailability, e.target.value)}
+                onChange={(event) =>
+                  updateFilter(setAvailability, event.target.value)
+                }
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-[#fafbf9] px-4 py-3 text-sm font-normal"
               >
                 <option value="true">Available</option>
@@ -272,7 +307,9 @@ export default function EquipmentCatalog() {
                   min="0"
                   placeholder="Min price"
                   value={minPrice}
-                  onChange={(e) => updateFilter(setMinPrice, e.target.value)}
+                  onChange={(event) =>
+                    updateFilter(setMinPrice, event.target.value)
+                  }
                   className="min-w-0 rounded-xl border border-slate-200 bg-[#fafbf9] px-3 py-3 text-sm font-normal"
                 />
 
@@ -281,7 +318,9 @@ export default function EquipmentCatalog() {
                   min="0"
                   placeholder="Max price"
                   value={maxPrice}
-                  onChange={(e) => updateFilter(setMaxPrice, e.target.value)}
+                  onChange={(event) =>
+                    updateFilter(setMaxPrice, event.target.value)
+                  }
                   className="min-w-0 rounded-xl border border-slate-200 bg-[#fafbf9] px-3 py-3 text-sm font-normal"
                 />
               </div>
@@ -297,7 +336,9 @@ export default function EquipmentCatalog() {
               Sort by
               <select
                 value={sort}
-                onChange={(e) => updateFilter(setSort, e.target.value)}
+                onChange={(event) =>
+                  updateFilter(setSort, event.target.value)
+                }
                 className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
               >
                 <option value="newest">Recently Added</option>
@@ -326,7 +367,9 @@ export default function EquipmentCatalog() {
           </div>
         ) : equipment.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-16 text-center">
-            <h2 className="text-xl font-bold">No equipment found</h2>
+            <h2 className="text-xl font-bold">
+              No equipment found
+            </h2>
 
             <p className="mt-3 text-sm text-slate-500">
               Try changing your search or filters.
@@ -354,8 +397,8 @@ export default function EquipmentCatalog() {
                       src={item.image}
                       alt={item.name}
                       className="h-full w-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = "none";
+                      onError={(event) => {
+                        event.currentTarget.style.display = "none";
                       }}
                     />
                   )}
@@ -393,11 +436,25 @@ export default function EquipmentCatalog() {
 
                     <Link
                       href={`/equipment/${item._id}`}
-                      className="rounded-xl bg-[#174f43] px-4 py-3 text-xs font-bold text-white hover:bg-[#236959]"
+                      className="rounded-xl border border-[#174f43] px-4 py-3 text-xs font-bold text-[#174f43] hover:bg-emerald-50"
                     >
                       View Details →
                     </Link>
                   </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setSelected(item)}
+                    disabled={
+                      !item.availability ||
+                      Number(item.availableQuantity ?? 1) < 1
+                    }
+                    className="mt-4 w-full rounded-xl bg-[#174f43] px-5 py-3 text-sm font-bold text-white hover:bg-[#236959] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {item.availability
+                      ? "Book This Equipment"
+                      : "Currently Unavailable"}
+                  </button>
                 </div>
               </article>
             ))}
@@ -434,6 +491,11 @@ export default function EquipmentCatalog() {
       <footer className="border-t border-[#e3e8e3] bg-white px-5 py-8 text-center text-xs text-slate-500">
         EquipRent · Equipment Rental Marketplace
       </footer>
+
+      <BookingModal
+        equipment={selected}
+        onClose={() => setSelected(null)}
+      />
     </main>
   );
 }

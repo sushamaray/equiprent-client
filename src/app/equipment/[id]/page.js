@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import BookingModal from "@/components/BookingModal";
 
 const API =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -33,6 +34,8 @@ export default function EquipmentDetails() {
   const { id } = useParams();
 
   const [equipment, setEquipment] = useState(null);
+  const [bookingOpen, setBookingOpen] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -75,7 +78,11 @@ export default function EquipmentDetails() {
       .catch((cause) => {
         if (controller.signal.aborted) return;
 
-        setError(cause.message || "Unable to load equipment.");
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : "Unable to load equipment.",
+        );
       })
       .finally(() => {
         if (!controller.signal.aborted) {
@@ -117,19 +124,17 @@ export default function EquipmentDetails() {
       .then((favorites) => {
         if (controller.signal.aborted) return;
 
-        const saved = Array.isArray(favorites) &&
+        const saved =
+          Array.isArray(favorites) &&
           favorites.some(
-            (item) => String(item.equipmentId) === String(id),
+            (item) =>
+              String(item.equipmentId) === String(id),
           );
 
         setIsFavorite(saved);
       })
-      .catch((cause) => {
-        if (controller.signal.aborted) return;
-
-        // Visitors and Owners can browse equipment normally.
-        // Customer authorization is checked when the button is clicked.
-        console.info("Favorite status:", cause.message);
+      .catch(() => {
+        // Visitors may browse equipment without signing in.
       })
       .finally(() => {
         if (!controller.signal.aborted) {
@@ -149,7 +154,6 @@ export default function EquipmentDetails() {
 
     try {
       const token = await getCustomerToken();
-
       const equipmentId = String(equipment._id);
 
       const response = await fetch(
@@ -182,8 +186,7 @@ export default function EquipmentDetails() {
         );
       }
 
-      setIsFavorite(!isFavorite);
-
+      setIsFavorite((previous) => !previous);
       setMessage(
         isFavorite
           ? "Equipment removed from your favorites."
@@ -191,7 +194,9 @@ export default function EquipmentDetails() {
       );
     } catch (cause) {
       setError(
-        cause.message || "Failed to update favorites.",
+        cause instanceof Error
+          ? cause.message
+          : "Failed to update favorites.",
       );
     } finally {
       setSaving(false);
@@ -297,21 +302,27 @@ export default function EquipmentDetails() {
 
               <dl className="space-y-4 text-sm">
                 <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
-                  <dt className="text-slate-500">Rental Period</dt>
+                  <dt className="text-slate-500">
+                    Rental Period
+                  </dt>
                   <dd className="font-semibold">
                     {equipment.rentalType || "daily"}
                   </dd>
                 </div>
 
                 <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
-                  <dt className="text-slate-500">Available Quantity</dt>
+                  <dt className="text-slate-500">
+                    Available Quantity
+                  </dt>
                   <dd className="font-semibold">
                     {equipment.availableQuantity ?? 1}
                   </dd>
                 </div>
 
                 <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
-                  <dt className="text-slate-500">Brand / Model</dt>
+                  <dt className="text-slate-500">
+                    Brand / Model
+                  </dt>
                   <dd className="text-right font-semibold">
                     {[equipment.brand, equipment.model]
                       .filter(Boolean)
@@ -320,14 +331,18 @@ export default function EquipmentDetails() {
                 </div>
 
                 <div className="flex justify-between gap-4 border-b border-slate-100 pb-3">
-                  <dt className="text-slate-500">Condition</dt>
+                  <dt className="text-slate-500">
+                    Condition
+                  </dt>
                   <dd className="font-semibold">
                     {equipment.condition || "Not specified"}
                   </dd>
                 </div>
 
                 <div className="border-b border-slate-100 pb-3">
-                  <dt className="text-slate-500">Rental Terms</dt>
+                  <dt className="text-slate-500">
+                    Rental Terms
+                  </dt>
                   <dd className="mt-2 leading-6 font-medium">
                     {equipment.rentalTerms ||
                       "Confirm rental dates and details before checkout."}
@@ -336,12 +351,19 @@ export default function EquipmentDetails() {
               </dl>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href={`/?equipment=${encodeURIComponent(String(equipment._id))}`}
-                  className="flex-1 rounded-xl bg-[#174f43] px-6 py-4 text-center text-sm font-bold text-white hover:bg-[#236959]"
+                <button
+                  type="button"
+                  onClick={() => setBookingOpen(true)}
+                  disabled={
+                    !equipment.availability ||
+                    Number(equipment.availableQuantity ?? 1) < 1
+                  }
+                  className="flex-1 rounded-xl bg-[#174f43] px-6 py-4 text-center text-sm font-bold text-white hover:bg-[#236959] disabled:opacity-50"
                 >
-                  Book This Equipment
-                </Link>
+                  {equipment.availability
+                    ? "Book This Equipment"
+                    : "Currently Unavailable"}
+                </button>
 
                 <button
                   type="button"
@@ -359,14 +381,14 @@ export default function EquipmentDetails() {
                     : !favoriteReady
                       ? "Checking Favorites..."
                       : isFavorite
-                        ? "♡ Remove from Favorites"
-                        : "♥ Add to Favorites"}
+                        ? "♥ Remove from Favorites"
+                        : "♡ Add to Favorites"}
                 </button>
               </div>
 
               <p className="mt-5 text-xs leading-5 text-slate-500">
-                Rental availability and final pricing are verified
-                before Stripe Checkout.
+                Rental availability and final pricing are
+                verified before Stripe Checkout.
               </p>
             </div>
           </article>
@@ -376,6 +398,11 @@ export default function EquipmentDetails() {
           </p>
         ) : null}
       </div>
+
+      <BookingModal
+        equipment={bookingOpen ? equipment : null}
+        onClose={() => setBookingOpen(false)}
+      />
     </main>
   );
 }
