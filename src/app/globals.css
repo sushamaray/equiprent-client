@@ -1,26 +1,1521 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+:root{--ink:#192321;--muted:#68736f;--paper:#f7f8f5;--line:#e3e8e3;--green:#174f43;--mint:#e9f1eb;--orange:#df704b}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,Helvetica,sans-serif}.site-shell{max-width:1360px;margin:auto;padding:0 6.3%}.topbar{height:82px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}.brand{font-size:22px;font-weight:800;letter-spacing:-1px;color:var(--ink);text-decoration:none}.brand span{color:var(--orange)}.hero{padding:92px 0 85px;border-bottom:1px solid var(--line);max-width:720px}.eyebrow{font-size:10px;font-weight:bold;letter-spacing:2px;color:var(--orange);margin:0 0 17px}.hero h1{font-family:Georgia,serif;font-size:clamp(44px,6vw,72px);font-weight:500;letter-spacing:-2.5px;line-height:1.04;margin:0 0 20px}.hero>p:not(.eyebrow){color:var(--muted);font-size:16px;line-height:1.7;max-width:510px}.primary-link{display:inline-flex;gap:24px;align-items:center;margin-top:18px;background:var(--green);color:white;text-decoration:none;padding:15px 20px;font-weight:600;font-size:13px}.catalog{padding:68px 0 90px}.section-heading{display:flex;justify-content:space-between;align-items:end;margin-bottom:27px}.section-heading .eyebrow{margin-bottom:9px}.section-heading h2{font:500 34px Georgia,serif;margin:0}.section-heading>span,.category{font-size:11px;color:var(--muted)}.equipment-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}.equipment-card{background:#fff;border:1px solid var(--line);min-width:0}.equipment-image{height:205px;background:#e7ece7;position:relative;display:grid;place-items:center;overflow:hidden;color:var(--green);font:32px Georgia}.equipment-image img{width:100%;height:100%;object-fit:cover}.availability{position:absolute;top:12px;left:12px;background:#fff;padding:7px 10px;font-size:10px}.card-body{padding:19px}.category{margin:0 0 8px}.card-body h3{font:500 22px Georgia,serif;margin:0 0 8px}.description{font-size:12px;color:var(--muted);line-height:1.55;min-height:38px;margin:0}.card-footer{display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:15px;margin-top:17px}.card-footer p{margin:0}.card-footer strong{font-size:17px}.card-footer p span{font-size:11px;color:var(--muted)}button{font:inherit;cursor:pointer}.card-footer button,.submit-button{border:0;background:var(--green);color:#fff;padding:11px 13px;font-size:11px;font-weight:600}.card-footer button:hover,.submit-button:hover,.primary-link:hover{background:#236959}.empty{padding:46px 15px;text-align:center;color:var(--muted);background:white;border:1px solid var(--line)}footer{border-top:1px solid var(--line);padding:22px 0 32px;text-align:center;color:var(--muted);font-size:11px}footer span{padding:0 8px;color:var(--orange)}.modal-backdrop{position:fixed;inset:0;background:#16201dd1;z-index:10;display:grid;place-items:center;padding:18px;overflow:auto}.booking-modal{position:relative;background:var(--paper);width:min(620px,100%);padding:36px;max-height:94vh;overflow:auto}.booking-modal h2{font:500 30px Georgia,serif;margin:0}.modal-copy{font-size:12px;color:var(--muted);line-height:1.5;margin:10px 0 23px}.close-button{position:absolute;right:17px;top:13px;border:0;background:transparent;font-size:27px;color:var(--muted)}.booking-form{display:grid;grid-template-columns:1fr 1fr;gap:13px}.booking-form label{font-size:11px;font-weight:600;display:grid;gap:7px}.booking-form input,.booking-form textarea{width:100%;border:1px solid #d8dfd9;background:white;padding:11px;font:13px Arial;color:var(--ink);outline-color:var(--green)}.full-width{grid-column:1/-1}.optional{font-weight:400;color:var(--muted)}.submit-button{padding:15px;display:flex;justify-content:space-between;font-size:12px}.submit-button:disabled{opacity:.65;cursor:wait}.secure-note{text-align:center;color:var(--muted);font-size:10px;line-height:1.5;margin:13px 0 0}.notice{font-size:12px;padding:12px;margin:10px 0}.error{color:#8e321e;background:#fff0eb}.result-shell{min-height:100vh;display:grid;place-items:center;padding:24px;background:var(--paper)}.result-card{width:min(520px,100%);background:white;border:1px solid var(--line);padding:40px}.result-mark{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--mint);color:var(--green);font-size:23px;margin-bottom:24px}.result-card h1{font:500 35px Georgia,serif;margin:0 0 12px}.result-card p{font-size:13px;line-height:1.65;color:var(--muted)}.result-detail{padding:14px;background:var(--paper);margin:18px 0;font-size:12px;line-height:1.8}.result-action{display:inline-block;background:var(--green);color:#fff;text-decoration:none;padding:13px 17px;font-size:12px;font-weight:600;margin-top:12px}.result-action.secondary{background:white;color:var(--green);border:1px solid var(--green);margin-left:8px}.result-error{color:#9c3e24!important}
+.card-footer .card-link{font-size:10px;color:var(--green);font-weight:600;text-decoration:none}.card-footer .card-link:hover{text-decoration:underline}.details-shell{min-height:100vh}.details-layout{display:grid;grid-template-columns:1.05fr .95fr;gap:7%;padding:60px 0 90px;align-items:start}.details-photo{min-height:520px;background:#e7ece7;background-size:cover;background-position:center}.details-copy{padding:10px 0}.details-copy h1{font:500 clamp(38px,5vw,58px) Georgia,serif;letter-spacing:-1.5px;line-height:1.05;margin:0 0 16px}.details-description{color:var(--muted);font-size:14px;line-height:1.7}.details-price{font-size:25px;font-weight:700;margin:25px 0}.details-price span{font-size:13px;color:var(--muted);font-weight:400}.spec-list{border-top:1px solid var(--line);margin:0 0 24px}.spec-list div{display:grid;grid-template-columns:145px 1fr;gap:12px;border-bottom:1px solid var(--line);padding:13px 0;font-size:12px;line-height:1.5}.spec-list dt{color:var(--muted)}.spec-list dd{margin:0;font-weight:600}
+@media(max-width:800px){.equipment-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.site-shell{padding:0 5%}.hero{padding:70px 0}.equipment-image{height:175px}.details-layout{grid-template-columns:1fr;gap:28px;padding-top:28px}.details-photo{min-height:360px}}
+@media(max-width:560px){.equipment-grid{grid-template-columns:1fr}.equipment-image{height:210px}.topbar{height:68px}.topbar>span{font-size:10px}.hero{padding:58px 0}.section-heading h2{font-size:29px}.booking-modal{padding:29px 20px}.booking-form{grid-template-columns:1fr}.full-width{grid-column:auto}.result-card{padding:30px 24px}.result-action.secondary{margin-left:0}.card-footer{gap:8px;flex-wrap:wrap}.card-footer p{flex:1 0 100%}.details-photo{min-height:270px}.spec-list div{grid-template-columns:115px 1fr}}
+.topbar-right{display:flex;align-items:center;gap:24px}.signin-link,.back-link{color:var(--green);font-size:11px;font-weight:600;text-decoration:none}.signin-link:hover,.back-link:hover{text-decoration:underline}.signin-card h1{font:500 35px Georgia,serif;margin:16px 0 10px}.signin-card>p:not(.eyebrow){font-size:13px;color:var(--muted);line-height:1.6}.signin-eyebrow{margin-top:35px}.signin-form{display:grid;gap:15px;margin:23px 0}.signin-form label{display:grid;gap:7px;font-size:11px;font-weight:600}.signin-form input{border:1px solid var(--line);padding:12px;font-size:13px}.signin-card>.back-link{display:inline-block;margin-top:8px}
+.rentals-section{padding:62px 0 95px}.rentals-section h1{font:500 42px Georgia,serif;margin:0}.rentals-intro{color:var(--muted);font-size:13px;margin:10px 0 28px}.rentals-list{display:grid;gap:12px}.rental-row{display:flex;justify-content:space-between;align-items:center;gap:20px;background:white;border:1px solid var(--line);padding:20px}.rental-row .category{margin:0 0 9px}.rental-row h2{font:500 22px Georgia,serif;margin:0 0 8px}.rental-row h2 span{font-size:14px;color:var(--muted)}.rental-row p:last-child{font-size:12px;color:var(--muted);margin:0}.rental-status{background:var(--mint);color:var(--green);padding:8px 11px;font-size:10px;text-transform:uppercase;letter-spacing:.7px;font-weight:700}.rental-status.rejected,.rental-status.cancelled{background:#fff0eb;color:#8e321e}
+
+
+/* =========================================
+   EQUIPRENT PREMIUM HOMEPAGE DESIGN
+========================================= */
+
+.home-page {
+  --home-ink: #182b27;
+  --home-green: #164b3e;
+  --home-orange: #d97752;
+  --home-paper: #f6f6f1;
+  --home-muted: #78817b;
+  --home-border: #e4e7df;
+
+  width: 100%;
+  overflow: hidden;
+  background: var(--home-paper);
+  color: var(--home-ink);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* HEADER */
+
+.home-header {
+  min-height: 84px;
+  padding: 0 6.5%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  border-bottom: 1px solid var(--home-border);
+  background: #fafaf7;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+.home-brand {
+  flex-shrink: 0;
+  color: var(--home-ink);
+  font-size: 25px;
+  font-weight: 850;
+  letter-spacing: -1.6px;
+  text-decoration: none;
+}
+
+.home-brand span {
+  color: var(--home-orange);
+}
+
+.home-navigation {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.home-navigation a,
+.home-nav-actions a,
+.nav-login {
+  color: #65716b;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color .2s ease;
+}
+
+.home-navigation a:hover,
+.home-navigation a.active {
+  color: var(--home-green);
+}
+
+.home-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-login {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.nav-register {
+  display: inline-flex;
+  gap: 15px;
+  align-items: center;
+  background: var(--home-green);
+  color: white !important;
+  padding: 13px 17px;
+}
+
+.nav-register:hover {
+  background: #226957;
+}
+
+.nav-dashboard {
+  color: var(--home-green) !important;
+}
+
+/* HERO */
+
+.home-hero {
+  position: relative;
+  min-height: 590px;
+  margin: 25px 3.2% 0;
+  padding: 85px 8%;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  color: white;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(12, 34, 29, .94) 0%,
+      rgba(12, 34, 29, .76) 48%,
+      rgba(12, 34, 29, .2) 100%
+    ),
+    url("https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=2000&q=85")
+    center 48% / cover no-repeat;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 680px;
+}
+
+.home-eyebrow {
+  margin: 0 0 16px;
+  color: var(--home-orange);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+}
+
+.hero-eyebrow {
+  color: #e9b18f;
+}
+
+.hero-content h1 {
+  margin: 0;
+  color: #fff;
+  font-family: Georgia, serif;
+  font-size: clamp(53px, 7vw, 91px);
+  font-weight: 400;
+  letter-spacing: -4px;
+  line-height: .99;
+}
+
+.hero-content h1 em {
+  color: #e9ad83;
+  font-weight: 400;
+}
+
+.hero-description {
+  max-width: 465px;
+  margin: 26px 0 0;
+  color: rgba(255, 255, 255, .77);
+  font-size: 15px;
+  line-height: 1.85;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 25px;
+  margin-top: 34px;
+}
+
+.home-primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 25px;
+  padding: 17px 21px;
+  background: #e4a17b;
+  color: #1c3029;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  transition: background .2s ease, transform .2s ease;
+}
+
+.home-primary-button:hover {
+  background: #f1bd9a;
+  transform: translateY(-2px);
+}
+
+.hero-text-link {
+  color: white;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.hero-floating-card {
+  position: absolute;
+  z-index: 2;
+  right: 8%;
+  bottom: 105px;
+  width: 255px;
+  padding: 24px;
+  background: rgba(249, 249, 243, .95);
+  color: var(--home-ink);
+  box-shadow: 0 15px 45px rgba(0, 0, 0, .13);
+}
+
+.floating-label {
+  color: var(--home-muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.floating-periods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 17px;
+}
+
+.floating-periods span {
+  padding: 7px;
+  background: #e9eee8;
+  color: var(--home-green);
+  font-size: 8px;
+  font-weight: 800;
+}
+
+.hero-floating-card p {
+  margin: 18px 0 0;
+  font: 22px/1.3 Georgia, serif;
+}
+
+.floating-arrow {
+  display: block;
+  margin-top: 12px;
+  color: var(--home-orange);
+  text-align: right;
+  font-size: 24px;
+}
+
+.hero-bottom-note {
+  position: absolute;
+  right: 8%;
+  bottom: 27px;
+  left: 8%;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid rgba(255, 255, 255, .25);
+  padding-top: 15px;
+  color: rgba(255, 255, 255, .7);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+}
+
+/* SHARED SECTIONS */
+
+.home-section {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 100px 7%;
+}
+
+.home-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 25px;
+  margin-bottom: 38px;
+}
+
+.home-section-heading h2 {
+  margin: 0;
+  font: 400 clamp(31px, 4vw, 48px)/1.15 Georgia, serif;
+  letter-spacing: -1.5px;
+}
+
+.home-section-heading h2 span {
+  color: var(--home-orange);
+}
+
+.section-description {
+  max-width: 520px;
+  margin: 12px 0 0;
+  color: var(--home-muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.home-outline-link {
+  flex-shrink: 0;
+  padding: 13px 17px;
+  border: 1px solid var(--home-border);
+  color: var(--home-green);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.home-outline-link:hover {
+  background: var(--home-green);
+  color: white;
+}
+
+.home-loading {
+  padding: 55px 20px;
+  border: 1px solid var(--home-border);
+  background: white;
+  color: var(--home-muted);
+  text-align: center;
+  font-size: 13px;
+}
+
+.home-notice {
+  padding: 16px;
+  background: #fff0eb;
+  color: #8e321e;
+  font-size: 13px;
+}
+
+/* FEATURED EQUIPMENT */
+
+.featured-section {
+  padding-top: 110px;
+}
+
+.home-equipment-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 25px;
+}
+
+.home-equipment-card {
+  min-width: 0;
+  background: white;
+  border: 1px solid var(--home-border);
+  transition: box-shadow .25s ease;
+}
+
+.home-equipment-card:hover {
+  box-shadow: 0 18px 45px rgba(22, 55, 44, .1);
+}
+
+.home-equipment-image {
+  position: relative;
+  height: 235px;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, #e7ece5, #d9e1d9);
+  background-size: cover;
+  background-position: center;
+}
+
+.equipment-index {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  padding: 7px 10px;
+  background: rgba(255, 255, 255, .94);
+  color: var(--home-green);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.equipment-availability {
+  position: absolute;
+  right: 13px;
+  bottom: 13px;
+  padding: 8px 10px;
+  background: rgba(250, 250, 247, .96);
+  color: var(--home-green);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.home-equipment-body {
+  padding: 21px;
+}
+
+.equipment-meta {
+  margin: 0 0 10px;
+  color: var(--home-muted);
+  font-size: 10px;
+}
+
+.equipment-meta span {
+  padding: 0 4px;
+  color: var(--home-orange);
+}
+
+.home-equipment-body h3 {
+  min-height: 54px;
+  margin: 0;
+  font: 400 22px/1.25 Georgia, serif;
+}
+
+.equipment-description {
+  display: -webkit-box;
+  min-height: 38px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  margin: 12px 0 19px;
+  color: var(--home-muted);
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+.home-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--home-border);
+}
+
+.equipment-price strong {
+  font-size: 17px;
+}
+
+.equipment-price span {
+  color: var(--home-muted);
+  font-size: 10px;
+}
+
+.equipment-view-button {
+  border: 0;
+  background: none;
+  color: var(--home-green);
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.equipment-view-button:disabled,
+.equipment-book-button:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.equipment-book-button {
+  width: 100%;
+  margin-top: 15px;
+  padding: 13px;
+  border: 0;
+  background: var(--home-green);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.equipment-book-button:hover {
+  background: #226957;
+}
+
+/* CATEGORIES */
+
+.categories-section {
+  max-width: none;
+  background: #ecefe8;
+}
+
+.categories-section > * {
+  max-width: 1250px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.home-category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.home-category-card {
+  display: block;
+  min-height: 225px;
+  padding: 22px;
+  background: #fafaf7;
+  border: 1px solid #e1e6dc;
+  color: var(--home-ink);
+  text-decoration: none;
+  transition: background .25s ease, color .25s ease;
+}
+
+.home-category-card:hover {
+  background: var(--home-green);
+  color: white;
+}
+
+.category-top {
+  display: flex;
+  justify-content: space-between;
+  color: var(--home-muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.home-category-card:hover .category-top {
+  color: #d4e2d8;
+}
+
+.category-arrow {
+  font-size: 19px;
+}
+
+.category-icon {
+  margin: 23px 0 12px;
+  font-size: 29px;
+}
+
+.home-category-card h3 {
+  margin: 0;
+  font: 400 20px Georgia, serif;
+}
+
+.home-category-card p {
+  margin: 9px 0 0;
+  color: var(--home-muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.home-category-card:hover p {
+  color: #d5e0da;
+}
+
+/* WHY CHOOSE US */
+
+.home-benefits-section {
+  display: grid;
+  grid-template-columns: .8fr 1.2fr;
+  gap: 80px;
+  padding: 105px 10%;
+  background: #183d34;
+  color: white;
+}
+
+.benefits-intro h2 {
+  margin: 0;
+  color: white;
+  font: 400 clamp(36px, 4vw, 52px)/1.15 Georgia, serif;
+}
+
+.benefits-intro h2 em {
+  color: #e8ad85;
+  font-weight: 400;
+}
+
+.benefits-intro > p:last-child {
+  max-width: 380px;
+  margin-top: 22px;
+  color: #c0cec6;
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.benefit-card {
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, .15);
+}
+
+.benefit-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #b7c8bd;
+  font-size: 10px;
+}
+
+.benefit-icon {
+  color: #e8ad85;
+  font-size: 25px;
+}
+
+.benefit-card h3 {
+  margin: 24px 0 9px;
+  font: 400 21px Georgia, serif;
+}
+
+.benefit-card p {
+  margin: 0;
+  color: #c0cec6;
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+/* HOW IT WORKS */
+
+.how-section {
+  padding-top: 105px;
+  padding-bottom: 105px;
+}
+
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 30px;
+}
+
+.how-card {
+  padding: 25px 0;
+  border-top: 1px solid #cfd7ce;
+}
+
+.how-number {
+  color: var(--home-orange);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.how-line {
+  width: 35px;
+  height: 2px;
+  margin: 22px 0;
+  background: var(--home-green);
+}
+
+.how-card h3 {
+  margin: 0 0 12px;
+  font: 400 24px Georgia, serif;
+}
+
+.how-card p {
+  max-width: 300px;
+  margin: 0;
+  color: var(--home-muted);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+/* CUSTOMER REVIEWS */
+
+.reviews-section {
+  background: #eeeee8;
+  max-width: none;
+  padding-right: 7%;
+  padding-left: 7%;
+}
+
+.reviews-section > * {
+  max-width: 1250px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.review-card {
+  min-height: 265px;
+  padding: 23px;
+  background: #fafaf7;
+  border: 1px solid var(--home-border);
+}
+
+.review-stars {
+  color: #d68a56;
+  letter-spacing: 3px;
+  font-size: 13px;
+}
+
+.review-quote {
+  min-height: 115px;
+  margin: 21px 0;
+  color: #48544e;
+  font: italic 15px/1.65 Georgia, serif;
+}
+
+.review-person {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  border-top: 1px solid var(--home-border);
+  padding-top: 15px;
+}
+
+.review-avatar {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: #e5ede5;
+  color: var(--home-green);
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.review-person strong,
+.review-person span {
+  display: block;
+}
+
+.review-person strong {
+  font-size: 11px;
+}
+
+.review-person span {
+  margin-top: 4px;
+  color: var(--home-muted);
+  font-size: 9px;
+}
+
+.demo-review-note {
+  margin-top: 17px;
+  color: var(--home-muted);
+  font-size: 10px;
+  text-align: right;
+}
+
+/* OWNER CTA */
+
+.home-owner-cta {
+  margin: 90px 7%;
+  padding: 60px 7%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 35px;
+  background: #e8e9df;
+}
+
+.home-owner-cta h2 {
+  margin: 0;
+  font: 400 clamp(35px, 4vw, 52px)/1.15 Georgia, serif;
+}
+
+.home-owner-cta > div > p:last-child {
+  max-width: 480px;
+  color: var(--home-muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.owner-cta-button {
+  flex-shrink: 0;
+  padding: 17px 21px;
+  background: var(--home-green);
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.owner-cta-button:hover {
+  background: #226957;
+}
+
+/* FOOTER */
+
+.home-footer {
+  padding: 50px 7% 22px;
+  background: #142d27;
+  color: white;
+}
+
+.footer-main {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 45px;
+  padding-bottom: 42px;
+}
+
+.footer-brand {
+  color: white;
+}
+
+.footer-main > div:first-child p {
+  margin-top: 15px;
+  color: #b7c6be;
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.footer-links {
+  display: grid;
+  align-content: start;
+  gap: 13px;
+}
+
+.footer-links a {
+  color: #c5d0c9;
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  color: white;
+}
+
+.footer-contact span,
+.footer-contact strong {
+  display: block;
+}
+
+.footer-contact span {
+  margin-bottom: 12px;
+  color: #a8bdb1;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+}
+
+.footer-contact strong {
+  font-size: 13px;
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  border-top: 1px solid rgba(255,255,255,.15);
+  padding-top: 20px;
+  color: #a8bdb1;
+  font-size: 10px;
+}
+
+/* RESPONSIVE */
+
+@media(max-width:1050px) {
+  .home-header {
+    padding-right: 4%;
+    padding-left: 4%;
+  }
+
+  .home-navigation {
+    gap: 16px;
+  }
+
+  .home-navigation a {
+    font-size: 10px;
+  }
+
+  .home-equipment-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reviews-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-benefits-section {
+    gap: 40px;
+    padding-right: 7%;
+    padding-left: 7%;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@media(max-width:760px) {
+  .home-header {
+    flex-wrap: wrap;
+    padding-top: 16px;
+    padding-bottom: 13px;
+  }
+
+  .home-navigation {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    padding: 10px 0 3px;
+  }
+
+  .home-navigation a {
+    flex-shrink: 0;
+  }
+
+  .home-hero {
+    min-height: 620px;
+    padding: 65px 7%;
+    background-position: 62% center;
+  }
+
+  .hero-content h1 {
+    font-size: clamp(53px, 10vw, 72px);
+  }
+
+  .hero-floating-card {
+    right: 7%;
+    bottom: 80px;
+    width: 220px;
+  }
+
+  .hero-bottom-note {
+    right: 7%;
+    left: 7%;
+  }
+
+  .home-category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-benefits-section {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+
+  .how-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .home-owner-cta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .footer-main {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media(max-width:560px) {
+  .home-header {
+    gap: 12px;
+  }
+
+  .home-brand {
+    font-size: 22px;
+  }
+
+  .home-nav-actions {
+    gap: 12px;
+  }
+
+  .home-nav-actions a,
+  .nav-login {
+    font-size: 10px;
+  }
+
+  .nav-register {
+    padding: 11px;
+  }
+
+  .home-hero {
+    min-height: 650px;
+    margin: 12px 3% 0;
+    padding: 48px 7%;
+    background-position: 58% center;
+  }
+
+  .hero-content h1 {
+    font-size: 53px;
+    letter-spacing: -2px;
+  }
+
+  .hero-description {
+    font-size: 13px;
+  }
+
+  .hero-actions {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 17px;
+  }
+
+  .hero-floating-card {
+    right: 7%;
+    bottom: 86px;
+    width: 190px;
+    padding: 17px;
+  }
+
+  .hero-floating-card p {
+    font-size: 18px;
+  }
+
+  .hero-bottom-note {
+    font-size: 7px;
+    letter-spacing: .7px;
+  }
+
+  .home-section {
+    padding: 70px 6%;
+  }
+
+  .home-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .home-section-heading h2 {
+    font-size: 34px;
+  }
+
+  .home-equipment-grid,
+  .home-category-grid,
+  .reviews-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-equipment-image {
+    height: 225px;
+  }
+
+  .home-benefits-section {
+    padding: 70px 7%;
+  }
+
+  .benefits-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reviews-section {
+    padding-right: 6%;
+    padding-left: 6%;
+  }
+
+  .review-card {
+    min-height: 230px;
+  }
+
+  .review-quote {
+    min-height: auto;
+  }
+
+  .home-owner-cta {
+    margin: 55px 5%;
+    padding: 38px 25px;
+  }
+
+  .footer-main {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+  }
+}
+
+
+/* =====================================
+   EQUIPRENT - MODERN DESIGN REFINEMENT
+===================================== */
+
+.home-page {
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  color: #17231f;
+  background: #f7f8f6;
+}
+
+/* Modern typography */
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+.home-page h1,
+.home-page h2,
+.home-page h3,
+.home-page p,
+.home-page a,
+.home-page button {
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+}
+
+.home-brand {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -1.3px;
+}
+
+.hero-content h1 {
+  font-family: Inter, "Segoe UI", sans-serif;
+  font-size: clamp(48px, 6vw, 76px);
+  font-weight: 750;
+  letter-spacing: -3.5px;
+  line-height: 1.04;
+}
+
+.hero-content h1 em {
+  font-style: normal;
+  color: #e8ad85;
+}
+
+.home-section-heading h2 {
+  font-family: Inter, "Segoe UI", sans-serif;
+  font-size: clamp(30px, 3.5vw, 42px);
+  font-weight: 700;
+  letter-spacing: -1.8px;
+}
+
+.home-equipment-body h3 {
+  font-family: Inter, "Segoe UI", sans-serif;
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -.45px;
+  line-height: 1.4;
+}
+
+.benefits-intro h2,
+.how-card h3,
+.home-owner-cta h2 {
+  font-family: Inter, "Segoe UI", sans-serif;
+  font-weight: 700;
+  letter-spacing: -1.7px;
+}
+
+.review-quote {
+  font-family: Inter, "Segoe UI", sans-serif;
+  font-style: normal;
+  font-size: 13px;
+  line-height: 1.85;
+}
+
+/* Featured equipment cards */
+
+.home-equipment-card {
+  border: 1px solid #e8ece8;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 3px 14px rgba(22, 48, 37, .035);
+  transition:
+    transform .3s ease,
+    box-shadow .3s ease,
+    border-color .3s ease;
+}
+
+.home-equipment-card:hover {
+  transform: translateY(-5px);
+  border-color: #d5e1d8;
+  box-shadow: 0 15px 35px rgba(22, 48, 37, .09);
+}
+
+.home-equipment-image {
+  height: 225px;
+  background-color: #edf0eb;
+  background-size: cover;
+  background-position: center;
+  transition: background-size .3s ease;
+}
+
+.equipment-index {
+  border-radius: 6px;
+  font-size: 9px;
+  letter-spacing: .5px;
+}
+
+.equipment-availability {
+  border-radius: 5px;
+  padding: 8px 11px;
+  font-size: 10px;
+}
+
+.home-equipment-body {
+  padding: 22px;
+}
+
+.equipment-meta {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .25px;
+}
+
+.home-equipment-body h3 {
+  min-height: 50px;
+  margin-top: 7px;
+}
+
+.equipment-description {
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+.home-card-footer {
+  padding-top: 17px;
+  border-top: 1px solid #edf0ed;
+}
+
+.equipment-price strong {
+  font-size: 20px;
+  font-weight: 750;
+  letter-spacing: -.7px;
+}
+
+.equipment-price span {
+  font-size: 11px;
+}
+
+.equipment-view-button {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.equipment-book-button {
+  border-radius: 7px;
+  padding: 13px;
+  font-size: 11px;
+  transition: background .2s ease;
+}
+
+.equipment-book-button:hover {
+  background: #246b58;
+}
+
+/* Category cards */
+
+.home-category-card {
+  min-height: 210px;
+  padding: 25px;
+  border: 1px solid #e7ebe5;
+  border-radius: 15px;
+  background: #fff;
+  transition:
+    transform .25s ease,
+    box-shadow .25s ease,
+    background .25s ease;
+}
+
+.home-category-card:hover {
+  transform: translateY(-4px);
+  background: #174f43;
+  box-shadow: 0 12px 28px rgba(23, 79, 67, .12);
+}
+
+.category-icon {
+  font-size: 26px;
+}
+
+.home-category-card h3 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -.4px;
+}
+
+.home-category-card p {
+  font-size: 11px;
+  line-height: 1.7;
+}
+
+/* Benefits */
+
+.benefit-card {
+  border-radius: 13px;
+  background: rgba(255,255,255,.035);
+  transition: background .25s ease;
+}
+
+.benefit-card:hover {
+  background: rgba(255,255,255,.09);
+}
+
+.benefit-card h3 {
+  font-size: 17px;
+  font-weight: 650;
+}
+
+/* How it works */
+
+.how-card {
+  padding: 28px;
+  border: 1px solid #e7ebe5;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.how-card h3 {
+  font-size: 19px;
+  letter-spacing: -.5px;
+}
+
+.how-card p {
+  line-height: 1.8;
+}
+
+/* Customer reviews */
+
+.review-card {
+  min-height: 270px;
+  padding: 23px;
+  border: 1px solid #e7ebe5;
+  border-radius: 14px;
+  background: #fff;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.review-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 25px rgba(22, 48, 37, .06);
+}
+
+.review-avatar {
+  border-radius: 10px;
+}
+
+/* Owner CTA */
+
+.home-owner-cta {
+  border-radius: 18px;
+}
+
+.owner-cta-button,
+.home-primary-button,
+.nav-register {
+  border-radius: 7px;
+}
+
+/* Navbar */
+
+.home-header {
+  min-height: 78px;
+  background: rgba(250, 250, 247, .96);
+}
+
+.home-navigation a {
+  font-weight: 550;
+}
+
+.home-navigation a:hover {
+  color: #d97752;
+}
+
+/* Booking modal */
+
+.booking-modal {
+  border-radius: 16px;
+  box-shadow: 0 25px 80px rgba(0,0,0,.2);
+}
+
+.booking-form input,
+.booking-form textarea {
+  border-radius: 7px;
+}
+
+.submit-button {
+  border-radius: 7px;
+}
+
+/* Responsive refinement */
+
+@media(max-width: 560px) {
+  .hero-content h1 {
+    font-size: 48px;
+    letter-spacing: -2px;
+  }
+
+  .home-section-heading h2 {
+    font-size: 31px;
+  }
+
+  .home-equipment-card {
+    border-radius: 13px;
+  }
+
+  .home-category-card {
+    min-height: 195px;
+  }
+}
+
+
+/* ===== FINAL MODERN EQUIPRENT OVERRIDES ===== */
+
+.home-page {
+  font-family: "Segoe UI", Arial, sans-serif !important;
+}
+
+/* Modern sans-serif headings */
+
+.home-page .hero-content h1,
+.home-page .home-section-heading h2,
+.home-page .home-equipment-body h3,
+.home-page .home-category-card h3,
+.home-page .benefits-intro h2,
+.home-page .benefit-card h3,
+.home-page .how-card h3,
+.home-page .home-owner-cta h2,
+.home-page .review-quote {
+  font-family: "Segoe UI", Arial, sans-serif !important;
+  letter-spacing: -0.8px;
+}
+
+.home-page .hero-content h1 {
+  font-size: clamp(46px, 5.5vw, 72px);
+  font-weight: 750;
+  line-height: 1.08;
+  letter-spacing: -2.8px;
+}
+
+.home-page .hero-content h1 em {
+  font-style: normal;
+  font-weight: 750;
+}
+
+.home-page .home-section-heading h2 {
+  font-size: clamp(28px, 3.5vw, 40px);
+  font-weight: 700;
+}
+
+/* Premium equipment cards */
+
+.home-page .home-equipment-card {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid #e8ece8;
+  background: white;
+  box-shadow: 0 3px 15px rgba(20, 45, 35, .045);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.home-page .home-equipment-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 32px rgba(20, 45, 35, .10);
+}
+
+.home-page .home-equipment-image {
+  height: 240px;
+  background-size: cover;
+  background-position: center;
+}
+
+.home-page .home-equipment-body {
+  padding: 23px;
+}
+
+.home-page .home-equipment-body h3 {
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.home-page .equipment-price strong {
+  font-size: 21px;
+  font-weight: 750;
+}
+
+/* Rounded category cards */
+
+.home-page .home-category-card {
+  min-height: 215px;
+  border-radius: 15px;
+  background: white;
+  border: 1px solid #e8ece8;
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+
+.home-page .home-category-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 28px rgba(20, 45, 35, .09);
+}
+
+.home-page .home-category-card h3 {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+/* Reviews and process cards */
+
+.home-page .review-card,
+.home-page .how-card {
+  border-radius: 15px;
+  border: 1px solid #e8ece8;
+  background: white;
+}
+
+.home-page .review-card {
+  box-shadow: 0 3px 12px rgba(20, 45, 35, .035);
+}
+
+.home-page .review-quote {
+  font-size: 13px;
+  line-height: 1.8;
+  font-style: normal;
+}
+
+/* Refined floating hero card */
+
+.home-page .hero-floating-card {
+  border-radius: 15px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, .15);
+}
+
+.home-page .hero-floating-card p {
+  font-family: "Segoe UI", Arial, sans-serif;
+  font-size: 19px;
+  font-weight: 650;
+}
+
+/* Consistent buttons */
+
+.home-page .home-primary-button,
+.home-page .equipment-book-button,
+.home-page .owner-cta-button,
+.home-page .nav-register {
+  border-radius: 8px;
+  font-weight: 650;
+}
+
+@media(max-width:560px) {
+  .home-page .hero-content h1 {
+    font-size: 44px;
+    letter-spacing: -1.8px;
+  }
 }
