@@ -38,7 +38,9 @@ function StatCard({ title, value, description, accent }) {
         {value}
       </p>
 
-      <p className="mt-2 text-xs text-slate-500">{description}</p>
+      <p className="mt-2 text-xs text-slate-500">
+        {description}
+      </p>
     </div>
   );
 }
@@ -50,7 +52,9 @@ function MonthlyChart({ data }) {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-bold">Monthly Bookings</h3>
+          <h3 className="text-lg font-bold">
+            Monthly Bookings
+          </h3>
 
           <p className="mt-1 text-xs text-slate-500">
             Booking activity over the last six months
@@ -163,13 +167,15 @@ export default function AdminDashboard() {
 
         if (!analyticsResponse.ok) {
           throw new Error(
-            analyticsData.message || "Failed to load analytics."
+            analyticsData.message ||
+              "Failed to load analytics."
           );
         }
 
         if (!equipmentResponse.ok) {
           throw new Error(
-            equipmentData.message || "Failed to load equipment."
+            equipmentData.message ||
+              "Failed to load equipment."
           );
         }
 
@@ -277,12 +283,12 @@ export default function AdminDashboard() {
             <span className="text-[#df704b]">.</span>
           </Link>
 
-          {/* Updated Admin Navigation */}
           <div className="flex flex-wrap gap-3">
 
+            {/* Manage Platform - inactive on Admin Dashboard */}
             <Link
               href="/dashboard/admin/manage"
-              className="rounded-full bg-[#174f43] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#236959]"
+              className="rounded-full border border-[#dce6de] bg-white px-5 py-2 text-sm font-semibold text-[#53675b] transition-all duration-200 hover:border-[#c5dccb] hover:bg-[#eaf2eb] hover:text-[#174f43]"
             >
               Manage Platform
             </Link>
@@ -296,7 +302,7 @@ export default function AdminDashboard() {
 
             <Link
               href="/"
-              className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold"
+              className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold transition hover:border-[#c5dccb] hover:bg-[#eaf2eb] hover:text-[#174f43]"
             >
               View Website
             </Link>
@@ -315,7 +321,8 @@ export default function AdminDashboard() {
           </h1>
 
           <p className="mt-3 text-sm text-slate-600">
-            Monitor marketplace performance and manage equipment approvals.
+            Monitor marketplace performance and manage
+            equipment approvals.
           </p>
         </section>
 

@@ -816,24 +816,36 @@ export default function AdminManagementPage() {
             </p>
           </div>
 
-          <nav className="flex flex-wrap items-center gap-2 sm:gap-3">
+          {/* Active page navigation */}
+          <nav
+            aria-label="Admin navigation"
+            className="flex flex-wrap items-center gap-2 sm:gap-3"
+          >
             <Link
               href="/dashboard/admin"
-              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold hover:bg-slate-50 sm:px-5 sm:text-sm"
+              className="rounded-full border border-[#dce6de] bg-white px-4 py-2 text-xs font-semibold text-[#53675b] transition-all duration-200 hover:border-[#c5dccb] hover:bg-[#eaf2eb] hover:text-[#174f43] sm:px-5 sm:text-sm"
             >
               Analytics
             </Link>
 
             <Link
+              href="/dashboard/admin/manage"
+              aria-current="page"
+              className="rounded-full border border-[#174f43] bg-[#174f43] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:border-[#236959] hover:bg-[#236959] sm:px-5 sm:text-sm"
+            >
+              Manage Platform
+            </Link>
+
+            <Link
               href="/dashboard/profile"
-              className="rounded-full border border-[#174f43] px-4 py-2 text-xs font-semibold text-[#174f43] hover:bg-emerald-50 sm:px-5 sm:text-sm"
+              className="rounded-full border border-[#dce6de] bg-white px-4 py-2 text-xs font-semibold text-[#53675b] transition-all duration-200 hover:border-[#c5dccb] hover:bg-[#eaf2eb] hover:text-[#174f43] sm:px-5 sm:text-sm"
             >
               My Profile
             </Link>
 
             <Link
               href="/"
-              className="rounded-full bg-[#174f43] px-4 py-2 text-xs font-semibold text-white hover:bg-[#236959] sm:px-5 sm:text-sm"
+              className="rounded-full border border-[#dce6de] bg-white px-4 py-2 text-xs font-semibold text-[#53675b] transition-all duration-200 hover:border-[#c5dccb] hover:bg-[#eaf2eb] hover:text-[#174f43] sm:px-5 sm:text-sm"
             >
               View Website
             </Link>

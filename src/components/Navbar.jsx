@@ -166,22 +166,13 @@ function Brand() {
       aria-label="EquipRent Home"
       className="group flex shrink-0 items-center gap-3"
     >
+      {/* New Home Icon Logo */}
       <span className="flex h-11 w-11 items-center justify-center rounded-[14px] bg-[#174f43] text-white shadow-[0_6px_18px_rgba(23,79,67,0.18)] transition duration-300 group-hover:-rotate-6 group-hover:bg-[#236959]">
-        <svg
-          width="25"
-          height="25"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.55"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M3 9.5 12 4l9 5.5v9L12 23l-9-4.5v-9Z" />
-          <path d="m3 9.5 9 5 9-5M12 14.5V23" />
-          <path d="m8 7 9 5" />
-        </svg>
+        <Icon
+          name="home"
+          size={25}
+          strokeWidth={1.65}
+        />
       </span>
 
       <span
@@ -402,6 +393,7 @@ export default function Navbar() {
                   <span className="text-[#7b8f84] transition group-hover:text-[#174f43]">
                     <Icon name="login" size={16} />
                   </span>
+
                   Login
                 </Link>
 
