@@ -47,6 +47,7 @@ function SignInForm() {
 
   async function submit(event) {
     event.preventDefault();
+
     if (loading || googleLoading) return;
 
     setError("");
@@ -88,7 +89,9 @@ function SignInForm() {
         },
       );
 
-      const tokenData = await tokenResponse.json().catch(() => ({}));
+      const tokenData = await tokenResponse
+        .json()
+        .catch(() => ({}));
 
       if (!tokenResponse.ok || !tokenData.token) {
         throw new Error(
@@ -106,7 +109,9 @@ function SignInForm() {
         },
       );
 
-      const profileData = await profileResponse.json().catch(() => ({}));
+      const profileData = await profileResponse
+        .json()
+        .catch(() => ({}));
 
       if (!profileResponse.ok || !profileData.data) {
         throw new Error(
@@ -119,19 +124,23 @@ function SignInForm() {
 
       setSuccess("Login successful! Redirecting...");
 
-      await new Promise((resolve) => setTimeout(resolve, 850));
+      await new Promise((resolve) =>
+        setTimeout(resolve, 850),
+      );
 
       window.location.assign(destination);
     } catch (cause) {
       setSuccess("");
       setError(
-        cause instanceof Error ? cause.message : "Sign in failed.",
+        cause instanceof Error
+          ? cause.message
+          : "Sign in failed.",
       );
       setLoading(false);
     }
   }
 
-  async function signInWithGoogle() {
+  function signInWithGoogle() {
     if (loading || googleLoading) return;
 
     setGoogleLoading(true);
@@ -139,57 +148,19 @@ function SignInForm() {
     setSuccess("");
 
     try {
-      const destination = returnTo || "/dashboard/profile";
-
-      const callbackURL = new URL(
-        destination,
-        window.location.origin,
-      ).href;
-
-      const errorCallbackURL = new URL(
-        "/sign-in",
-        window.location.origin,
+      // Start OAuth with a top-level browser navigation.
+      // This allows the backend to set its state cookie
+      // in a first-party context before visiting Google.
+      const startURL = new URL(
+        "/api/oauth/google/start",
+        API,
       );
-
-      errorCallbackURL.searchParams.set("oauthError", "true");
 
       if (returnTo) {
-        errorCallbackURL.searchParams.set("returnTo", returnTo);
+        startURL.searchParams.set("returnTo", returnTo);
       }
 
-      const response = await fetch(
-        `${API}/api/auth/sign-in/social`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            provider: "google",
-            callbackURL,
-            errorCallbackURL: errorCallbackURL.href,
-          }),
-        },
-      );
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok || !data.url) {
-        throw new Error(
-          data.message ||
-            data.error?.message ||
-            "Google Sign In is not configured yet.",
-        );
-      }
-
-      const redirect = new URL(data.url);
-
-      if (redirect.protocol !== "https:") {
-        throw new Error("Invalid Google authorization URL.");
-      }
-
-      window.location.assign(redirect.href);
+      window.location.assign(startURL.href);
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -203,7 +174,9 @@ function SignInForm() {
   return (
     <main
       className="grid min-h-screen place-items-center bg-[#f7f8f6] px-4 py-12 text-[#17231f]"
-      style={{ fontFamily: '"Segoe UI", Arial, sans-serif' }}
+      style={{
+        fontFamily: '"Segoe UI", Arial, sans-serif',
+      }}
     >
       <SuccessToast message={success} />
 
@@ -212,7 +185,8 @@ function SignInForm() {
           href="/"
           className="inline-block text-[25px] font-extrabold tracking-[-1.5px] text-[#174f43]"
         >
-          EquipRent<span className="text-[#df704b]">.</span>
+          EquipRent
+          <span className="text-[#df704b]">.</span>
         </Link>
 
         <div className="mb-8 mt-10">
@@ -264,7 +238,9 @@ function SignInForm() {
               required
               autoComplete="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) =>
+                setEmail(event.target.value)
+              }
               placeholder="you@example.com"
               className="mt-2 w-full rounded-xl border border-[#dfe5df] bg-[#fafbf9] px-4 py-3.5 text-sm font-normal outline-none transition focus:border-[#174f43] focus:ring-2 focus:ring-[#174f43]/10"
             />
@@ -277,7 +253,9 @@ function SignInForm() {
               required
               autoComplete="current-password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) =>
+                setPassword(event.target.value)
+              }
               placeholder="Enter your password"
               className="mt-2 w-full rounded-xl border border-[#dfe5df] bg-[#fafbf9] px-4 py-3.5 text-sm font-normal outline-none transition focus:border-[#174f43] focus:ring-2 focus:ring-[#174f43]/10"
             />
@@ -298,7 +276,9 @@ function SignInForm() {
 
         <div className="my-6 flex items-center gap-4">
           <div className="h-px flex-1 bg-slate-200" />
-          <span className="text-xs text-slate-500">OR</span>
+          <span className="text-xs text-slate-500">
+            OR
+          </span>
           <div className="h-px flex-1 bg-slate-200" />
         </div>
 

@@ -125,7 +125,9 @@ export default function RegisterPage() {
         },
       );
 
-      const data = await response.json().catch(() => ({}));
+      const data = await response
+        .json()
+        .catch(() => ({}));
 
       if (!response.ok) {
         throw new Error(
@@ -139,7 +141,9 @@ export default function RegisterPage() {
         "Account created successfully! Redirecting to sign in...",
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 850));
+      await new Promise((resolve) =>
+        setTimeout(resolve, 850),
+      );
 
       router.push("/sign-in?registered=true");
       router.refresh();
@@ -155,7 +159,7 @@ export default function RegisterPage() {
     }
   }
 
-  async function handleGoogleSignUp() {
+  function handleGoogleSignUp() {
     if (busy) return;
 
     setError("");
@@ -163,56 +167,21 @@ export default function RegisterPage() {
     setGoogleLoading(true);
 
     try {
-      const callbackURL = new URL(
-        "/dashboard/profile",
-        window.location.origin,
-      ).href;
-
-      const errorCallbackURL = new URL(
-        "/sign-in?oauthError=true",
-        window.location.origin,
-      ).href;
-
-      const response = await fetch(
-        `${API_URL}/api/auth/sign-in/social`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            provider: "google",
-            callbackURL,
-            errorCallbackURL,
-          }),
-        },
+      // Start OAuth with top-level browser navigation.
+      // This avoids setting Better Auth's OAuth state
+      // cookie through a third-party fetch response.
+      const startURL = new URL(
+        "/api/oauth/google/start",
+        API_URL,
       );
 
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok || !data.url) {
-        throw new Error(
-          data.message ||
-            data.error?.message ||
-            "Google sign-up is not available. Check OAuth configuration.",
-        );
-      }
-
-      const url = new URL(data.url);
-
-      if (url.protocol !== "https:") {
-        throw new Error("Unexpected Google authorization URL.");
-      }
-
-      window.location.assign(url.href);
+      window.location.assign(startURL.href);
     } catch (cause) {
       setError(
         cause instanceof Error
           ? cause.message
           : "Google sign-up failed.",
       );
-
       setGoogleLoading(false);
     }
   }
@@ -317,7 +286,8 @@ export default function RegisterPage() {
                 alt="Profile preview"
                 className="h-14 w-14 rounded-full bg-[#e3e9e3] object-cover"
                 onError={(event) => {
-                  event.currentTarget.style.visibility = "hidden";
+                  event.currentTarget.style.visibility =
+                    "hidden";
                 }}
               />
 
