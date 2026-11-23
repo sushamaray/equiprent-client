@@ -4,6 +4,7 @@
 import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import SuccessToast from "@/components/SuccessToast";
 
 const API =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -23,13 +24,24 @@ function roleDestination(role) {
   return "/";
 }
 
+function GoogleBadge() {
+  return (
+    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-base font-extrabold text-[#174f43]">
+      G
+    </span>
+  );
+}
+
 function SignInForm() {
   const params = useSearchParams();
+
   const registered = params.get("registered") === "true";
+  const returnTo = safeDestination(params.get("returnTo"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -38,6 +50,7 @@ function SignInForm() {
     if (loading || googleLoading) return;
 
     setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
@@ -93,27 +106,26 @@ function SignInForm() {
         },
       );
 
-      const profileData = await profileResponse
-        .json()
-        .catch(() => ({}));
+      const profileData = await profileResponse.json().catch(() => ({}));
 
       if (!profileResponse.ok || !profileData.data) {
         throw new Error(
-          profileData.message ||
-            "Unable to verify account role.",
+          profileData.message || "Unable to verify account role.",
         );
       }
 
       const destination =
-        safeDestination(params.get("returnTo")) ||
-        roleDestination(profileData.data.role);
+        returnTo || roleDestination(profileData.data.role);
+
+      setSuccess("Login successful! Redirecting...");
+
+      await new Promise((resolve) => setTimeout(resolve, 850));
 
       window.location.assign(destination);
     } catch (cause) {
+      setSuccess("");
       setError(
-        cause instanceof Error
-          ? cause.message
-          : "Sign in failed.",
+        cause instanceof Error ? cause.message : "Sign in failed.",
       );
       setLoading(false);
     }
@@ -124,10 +136,26 @@ function SignInForm() {
 
     setGoogleLoading(true);
     setError("");
+    setSuccess("");
 
     try {
-      const callbackURL =
-        `${window.location.origin}/dashboard/profile`;
+      const destination = returnTo || "/dashboard/profile";
+
+      const callbackURL = new URL(
+        destination,
+        window.location.origin,
+      ).href;
+
+      const errorCallbackURL = new URL(
+        "/sign-in",
+        window.location.origin,
+      );
+
+      errorCallbackURL.searchParams.set("oauthError", "true");
+
+      if (returnTo) {
+        errorCallbackURL.searchParams.set("returnTo", returnTo);
+      }
 
       const response = await fetch(
         `${API}/api/auth/sign-in/social`,
@@ -140,8 +168,7 @@ function SignInForm() {
           body: JSON.stringify({
             provider: "google",
             callbackURL,
-            errorCallbackURL:
-              `${window.location.origin}/sign-in?oauthError=true`,
+            errorCallbackURL: errorCallbackURL.href,
           }),
         },
       );
@@ -176,10 +203,10 @@ function SignInForm() {
   return (
     <main
       className="grid min-h-screen place-items-center bg-[#f7f8f6] px-4 py-12 text-[#17231f]"
-      style={{
-        fontFamily: '"Segoe UI", Arial, sans-serif',
-      }}
+      style={{ fontFamily: '"Segoe UI", Arial, sans-serif' }}
     >
+      <SuccessToast message={success} />
+
       <section className="w-full max-w-[470px] rounded-3xl border border-[#e5eae5] bg-white p-7 shadow-[0_12px_45px_rgba(20,45,35,0.05)] sm:p-10">
         <Link
           href="/"
@@ -207,7 +234,7 @@ function SignInForm() {
             role="status"
             className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
           >
-            ✓ Registration successful! Please sign in.
+            Registration successful! Please sign in.
           </div>
         )}
 
@@ -237,11 +264,9 @@ function SignInForm() {
               required
               autoComplete="email"
               value={email}
-              onChange={(event) =>
-                setEmail(event.target.value)
-              }
+              onChange={(event) => setEmail(event.target.value)}
               placeholder="you@example.com"
-              className="mt-2 w-full rounded-xl border border-[#dfe5df] bg-[#fafbf9] px-4 py-3.5 text-sm font-normal outline-none focus:border-[#174f43]"
+              className="mt-2 w-full rounded-xl border border-[#dfe5df] bg-[#fafbf9] px-4 py-3.5 text-sm font-normal outline-none transition focus:border-[#174f43] focus:ring-2 focus:ring-[#174f43]/10"
             />
           </label>
 
@@ -252,21 +277,22 @@ function SignInForm() {
               required
               autoComplete="current-password"
               value={password}
-              onChange={(event) =>
-                setPassword(event.target.value)
-              }
+              onChange={(event) => setPassword(event.target.value)}
               placeholder="Enter your password"
-              className="mt-2 w-full rounded-xl border border-[#dfe5df] bg-[#fafbf9] px-4 py-3.5 text-sm font-normal outline-none focus:border-[#174f43]"
+              className="mt-2 w-full rounded-xl border border-[#dfe5df] bg-[#fafbf9] px-4 py-3.5 text-sm font-normal outline-none transition focus:border-[#174f43] focus:ring-2 focus:ring-[#174f43]/10"
             />
           </label>
 
           <button
             type="submit"
             disabled={loading || googleLoading}
-            className="flex w-full items-center justify-between rounded-xl bg-[#174f43] px-5 py-4 text-sm font-bold text-white hover:bg-[#236959] disabled:opacity-60"
+            className="flex min-h-[56px] w-full items-center justify-center rounded-xl bg-[#174f43] px-5 py-4 text-sm font-bold text-white shadow-[0_6px_18px_rgba(23,79,67,0.14)] transition hover:bg-[#236959] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? "Signing in..." : "Sign in"}
-            <span>→</span>
+            {success
+              ? "Redirecting..."
+              : loading
+                ? "Signing in..."
+                : "Sign in"}
           </button>
         </form>
 
@@ -280,11 +306,9 @@ function SignInForm() {
           type="button"
           onClick={signInWithGoogle}
           disabled={loading || googleLoading}
-          className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#dfe5df] bg-white px-5 py-4 text-sm font-bold hover:bg-slate-50 disabled:opacity-60"
+          className="flex min-h-[56px] w-full items-center justify-center gap-3 rounded-xl border border-[#dfe5df] bg-[#f7faf7] px-5 py-4 text-sm font-bold text-[#174f43] transition hover:bg-[#eff5f0] disabled:opacity-60"
         >
-          <span className="text-lg font-bold text-blue-600">
-            G
-          </span>
+          <GoogleBadge />
           {googleLoading
             ? "Connecting to Google..."
             : "Continue with Google"}
@@ -302,7 +326,7 @@ function SignInForm() {
 
         <div className="mt-8 border-t border-[#edf0ed] pt-6 text-center">
           <Link
-            href="/"
+            href="/equipment"
             className="text-xs font-semibold text-[#758079] hover:text-[#174f43]"
           >
             ← Back to equipment

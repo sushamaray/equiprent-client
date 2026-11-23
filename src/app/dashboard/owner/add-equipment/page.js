@@ -1,9 +1,10 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Navbar from "@/components/Navbar";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -20,24 +21,105 @@ const CATEGORIES = [
   "Other",
 ];
 
+const CONDITIONS = [
+  { value: "new", label: "New" },
+  { value: "excellent", label: "Excellent" },
+  { value: "good", label: "Good" },
+  { value: "fair", label: "Fair" },
+];
+
+const INITIAL_FORM = {
+  name: "",
+  description: "",
+  category: "Camera",
+  location: "",
+  brand: "",
+  model: "",
+  condition: "good",
+  rentalType: "daily",
+  rentalPrice: "",
+  availableQuantity: "1",
+  rentalTerms: "",
+};
+
+const inputClass =
+  "mt-2 w-full rounded-xl border border-[#dfe7df] bg-[#fbfcfa] px-4 py-3.5 text-sm text-[#192321] outline-none transition placeholder:text-[#9ba89d] focus:border-[#174f43] focus:ring-2 focus:ring-[#174f43]/10 disabled:opacity-60";
+
+function SectionHeading({ number, title, description }) {
+  return (
+    <div className="mb-6 flex items-start gap-4">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eaf3ec] text-xs font-extrabold text-[#174f43]">
+        {number}
+      </div>
+
+      <div>
+        <h2 className="text-lg font-extrabold tracking-tight text-[#192321] sm:text-xl">
+          {title}
+        </h2>
+
+        <p className="mt-1 text-xs leading-6 text-[#78877d]">
+          {description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, required = false, children }) {
+  return (
+    <div>
+      <label className="block text-sm font-semibold text-[#26372c]">
+        {label}
+        {required && (
+          <span className="ml-1 text-[#df704b]">*</span>
+        )}
+      </label>
+
+      {children}
+    </div>
+  );
+}
+
+function FileIcon() {
+  return (
+    <svg
+      width="30"
+      height="30"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="m21 15-5-5L5 21" />
+    </svg>
+  );
+}
+
 export default function AddEquipmentPage() {
   const router = useRouter();
+  const fileInputRef = useRef(null);
+  const previewUrlRef = useRef("");
 
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    category: "Camera",
-    location: "",
-    rentalType: "daily",
-    rentalPrice: "",
-    availableQuantity: "1",
-  });
-
+  const [form, setForm] = useState(INITIAL_FORM);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+      }
+    };
+  }, []);
 
   function updateField(event) {
     const { name, value } = event.target;
@@ -53,6 +135,11 @@ export default function AddEquipmentPage() {
 
     setError("");
 
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = "";
+    }
+
     if (!file) {
       setImageFile(null);
       setImagePreview("");
@@ -66,42 +153,52 @@ export default function AddEquipmentPage() {
     ];
 
     if (!supportedTypes.includes(file.type)) {
-      setError("Please select a JPG, PNG, or WebP image.");
+      setError(
+        "Please select a JPG, PNG, or WebP image.",
+      );
+
+      setImageFile(null);
+      setImagePreview("");
       event.target.value = "";
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       setError("Image size must be 5 MB or less.");
+
+      setImageFile(null);
+      setImagePreview("");
       event.target.value = "";
       return;
     }
 
-    setImageFile(file);
+    const preview = URL.createObjectURL(file);
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImagePreview(String(reader.result || ""));
-    };
-    reader.readAsDataURL(file);
+    previewUrlRef.current = preview;
+    setImageFile(file);
+    setImagePreview(preview);
   }
 
   async function getAccessToken() {
-    const response = await fetch(`${API_URL}/api/auth/token`, {
-      method: "GET",
-      credentials: "include",
-    });
+    const response = await fetch(
+      `${API_URL}/api/auth/token`,
+      {
+        method: "GET",
+        credentials: "include",
+        cache: "no-store",
+      },
+    );
 
     if (!response.ok) {
-      throw new Error(
-        "Please sign in with your Owner account before adding equipment.",
-      );
+      throw new Error("AUTH_REQUIRED");
     }
 
-    const data = await response.json();
+    const data = await response
+      .json()
+      .catch(() => ({}));
 
     if (!data.token) {
-      throw new Error("Could not get an authentication token.");
+      throw new Error("AUTH_REQUIRED");
     }
 
     return data.token;
@@ -109,6 +206,9 @@ export default function AddEquipmentPage() {
 
   async function submitEquipment(event) {
     event.preventDefault();
+
+    if (loading) return;
+
     setError("");
     setSuccess("");
 
@@ -117,16 +217,36 @@ export default function AddEquipmentPage() {
       return;
     }
 
-    if (Number(form.rentalPrice) <= 0) {
-      setError("Rental price must be greater than zero.");
+    const price = Number(form.rentalPrice);
+    const quantity = Number(form.availableQuantity);
+
+    if (
+      !Number.isFinite(price) ||
+      price <= 0 ||
+      !Number.isSafeInteger(Math.round(price * 100))
+    ) {
+      setError(
+        "Rental price must be a valid amount greater than zero.",
+      );
       return;
     }
 
     if (
-      !Number.isInteger(Number(form.availableQuantity)) ||
-      Number(form.availableQuantity) < 1
+      !Number.isInteger(quantity) ||
+      quantity < 1
     ) {
-      setError("Available quantity must be at least 1.");
+      setError(
+        "Available quantity must be at least 1.",
+      );
+      return;
+    }
+
+    if (
+      !["daily", "weekly", "monthly"].includes(
+        form.rentalType,
+      )
+    ) {
+      setError("Please select a valid rental type.");
       return;
     }
 
@@ -135,7 +255,8 @@ export default function AddEquipmentPage() {
     try {
       const token = await getAccessToken();
 
-      // Step 1: Upload image to ImgBB through our backend.
+      // Step 1: Upload equipment image to ImgBB
+      // through the existing protected backend.
       const imageFormData = new FormData();
       imageFormData.append("image", imageFile);
 
@@ -154,23 +275,46 @@ export default function AddEquipmentPage() {
         .json()
         .catch(() => ({}));
 
-      if (!uploadResponse.ok || !uploadData.image?.url) {
+      if (
+        !uploadResponse.ok ||
+        !uploadData.image?.url
+      ) {
         throw new Error(
-          uploadData.message || "Image upload failed.",
+          uploadData.message ||
+            "Equipment image upload failed.",
         );
       }
 
-      // Step 2: Save equipment with the hosted image URL.
+      // Step 2: Create a pending equipment listing.
+      // The backend identifies the Owner from JWT.
       const equipmentPayload = {
         name: form.name.trim(),
         description: form.description.trim(),
         category: form.category,
         location: form.location.trim(),
+        brand: form.brand.trim(),
+        model: form.model.trim(),
+        condition: form.condition,
         rentalType: form.rentalType,
-        rentalPrice: Number(form.rentalPrice),
-        availableQuantity: Number(form.availableQuantity),
+        rentalPrice: price,
+        availableQuantity: quantity,
+        rentalTerms: form.rentalTerms.trim(),
         image: uploadData.image.url,
       };
+
+      // Backend validation accepts optional text
+      // fields only when they contain text.
+      if (!equipmentPayload.brand) {
+        delete equipmentPayload.brand;
+      }
+
+      if (!equipmentPayload.model) {
+        delete equipmentPayload.model;
+      }
+
+      if (!equipmentPayload.rentalTerms) {
+        delete equipmentPayload.rentalTerms;
+      }
 
       const createResponse = await fetch(
         `${API_URL}/api/equipment`,
@@ -190,35 +334,42 @@ export default function AddEquipmentPage() {
 
       if (!createResponse.ok) {
         throw new Error(
-          createData.message || "Could not create equipment.",
+          createData.message ||
+            "Could not create equipment.",
         );
       }
 
       setSuccess(
-        "Equipment submitted successfully! It may require admin approval before appearing publicly.",
+        "Equipment submitted successfully! Your listing is pending Admin approval.",
       );
 
-      setForm({
-        name: "",
-        description: "",
-        category: "Camera",
-        location: "",
-        rentalType: "daily",
-        rentalPrice: "",
-        availableQuantity: "1",
-      });
-
+      setForm({ ...INITIAL_FORM });
       setImageFile(null);
       setImagePreview("");
 
-      const imageInput = document.getElementById(
-        "equipment-image",
-      );
-
-      if (imageInput) {
-        imageInput.value = "";
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = "";
       }
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
     } catch (cause) {
+      if (cause?.message === "AUTH_REQUIRED") {
+        router.push(
+          `/sign-in?returnTo=${encodeURIComponent(
+            "/dashboard/owner/add-equipment",
+          )}`,
+        );
+        return;
+      }
+
       setError(
         cause instanceof Error
           ? cause.message
@@ -230,43 +381,109 @@ export default function AddEquipmentPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f7f8f5] px-4 py-10 text-slate-900 sm:px-6">
-      <div className="mx-auto max-w-3xl">
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="text-2xl font-extrabold tracking-tight text-emerald-900"
+    <>
+      <Navbar />
+
+      <main className="min-h-screen bg-[#f7f8f5] text-[#192321]">
+        <div className="mx-auto max-w-5xl px-5 pb-24 pt-10 sm:px-7 lg:px-10">
+          {/* BREADCRUMB */}
+          <nav
+            aria-label="Breadcrumb"
+            className="mb-9 flex flex-wrap items-center gap-2 text-xs text-[#78877d]"
           >
-            EquipRent<span className="text-amber-500">.</span>
-          </Link>
+            <Link
+              href="/"
+              className="hover:text-[#174f43]"
+            >
+              Home
+            </Link>
 
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="rounded-full border border-slate-200 bg-white px-5 py-2 text-sm font-semibold hover:bg-slate-50"
+            <span>/</span>
+
+            <Link
+              href="/dashboard/owner"
+              className="hover:text-[#174f43]"
+            >
+              Owner Dashboard
+            </Link>
+
+            <span>/</span>
+
+            <span className="font-bold text-[#174f43]">
+              Add Equipment
+            </span>
+          </nav>
+
+          {/* PAGE HEADING */}
+          <div className="mb-9 flex flex-wrap items-end justify-between gap-5">
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[2.5px] text-[#df704b]">
+                Owner Dashboard
+              </p>
+
+              <h1 className="mt-4 text-3xl font-extrabold tracking-[-1.5px] sm:text-5xl">
+                Add New Equipment
+                <span className="text-[#df704b]">
+                  .
+                </span>
+              </h1>
+
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-[#728077]">
+                Create your equipment listing, upload a
+                clear photo, and set the rental terms.
+                Every new listing requires Admin approval
+                before appearing in the marketplace.
+              </p>
+            </div>
+
+            <Link
+              href="/dashboard/owner/equipment"
+              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[#dce6de] bg-white px-5 text-sm font-bold text-[#174f43] transition hover:bg-[#edf4ef]"
+            >
+              My Equipment
+            </Link>
+          </div>
+
+          {/* OWNER NAVIGATION */}
+          <nav
+            aria-label="Owner dashboard navigation"
+            className="mb-9 flex flex-wrap gap-3"
           >
-            Go back
-          </button>
-        </div>
+            <Link
+              href="/dashboard/owner"
+              className="rounded-xl border border-[#dce6de] bg-white px-5 py-3 text-xs font-bold text-[#174f43] transition hover:bg-[#edf4ef]"
+            >
+              Overview
+            </Link>
 
-        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-10">
-          <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">
-            Owner Dashboard
-          </p>
+            <Link
+              href="/dashboard/owner/add-equipment"
+              aria-current="page"
+              className="rounded-xl bg-[#174f43] px-5 py-3 text-xs font-bold text-white"
+            >
+              Add Equipment
+            </Link>
 
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-            Add New Equipment
-          </h1>
+            <Link
+              href="/dashboard/owner/equipment"
+              className="rounded-xl border border-[#dce6de] bg-white px-5 py-3 text-xs font-bold text-[#174f43] transition hover:bg-[#edf4ef]"
+            >
+              My Equipment
+            </Link>
 
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            List your equipment for customers to rent.
-            Upload a clear image and provide accurate rental details.
-          </p>
+            <Link
+              href="/dashboard/owner/rentals"
+              className="rounded-xl border border-[#dce6de] bg-white px-5 py-3 text-xs font-bold text-[#174f43] transition hover:bg-[#edf4ef]"
+            >
+              Equipment Rentals
+            </Link>
+          </nav>
 
+          {/* FEEDBACK */}
           {error && (
             <div
               role="alert"
-              className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+              className="mb-7 rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700"
             >
               {error}
             </div>
@@ -275,214 +492,350 @@ export default function AddEquipmentPage() {
           {success && (
             <div
               role="status"
-              className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"
+              className="mb-7 rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-800"
             >
               {success}
+
+              <div className="mt-3">
+                <Link
+                  href="/dashboard/owner/equipment"
+                  className="text-sm font-bold underline"
+                >
+                  View My Equipment
+                </Link>
+              </div>
             </div>
           )}
 
+          {/* EQUIPMENT FORM */}
           <form
             onSubmit={submitEquipment}
-            className="mt-8 space-y-6"
+            className="space-y-6"
           >
-            <div>
-              <label
-                htmlFor="equipment-name"
-                className="mb-2 block text-sm font-semibold"
-              >
-                Equipment Name *
-              </label>
-
-              <input
-                id="equipment-name"
-                name="name"
-                required
-                minLength={3}
-                maxLength={120}
-                value={form.name}
-                onChange={updateField}
-                placeholder="Canon EOS R50 Camera"
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-700"
+            {/* BASIC INFORMATION */}
+            <section className="rounded-[24px] border border-[#e2eae3] bg-white p-6 shadow-[0_8px_30px_rgba(20,45,35,0.035)] sm:p-9">
+              <SectionHeading
+                number="01"
+                title="Basic Information"
+                description="Tell customers what equipment you are offering."
               />
-            </div>
 
-            <div>
-              <label
-                htmlFor="equipment-description"
-                className="mb-2 block text-sm font-semibold"
-              >
-                Description *
-              </label>
+              <div className="space-y-6">
+                <Field
+                  label="Equipment Name"
+                  required
+                >
+                  <input
+                    name="name"
+                    type="text"
+                    required
+                    minLength={3}
+                    maxLength={120}
+                    value={form.name}
+                    onChange={updateField}
+                    placeholder="Canon EOS R50 Camera"
+                    className={inputClass}
+                  />
+                </Field>
 
-              <textarea
-                id="equipment-description"
-                name="description"
-                required
-                rows={4}
-                value={form.description}
-                onChange={updateField}
-                placeholder="Describe the equipment, its condition, and included accessories."
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-700"
+                <Field
+                  label="Description"
+                  required
+                >
+                  <textarea
+                    name="description"
+                    required
+                    minLength={10}
+                    rows={5}
+                    value={form.description}
+                    onChange={updateField}
+                    placeholder="Describe the equipment, features, included accessories and any important information."
+                    className={`${inputClass} resize-y`}
+                  />
+                </Field>
+
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <Field
+                    label="Category"
+                    required
+                  >
+                    <select
+                      name="category"
+                      required
+                      value={form.category}
+                      onChange={updateField}
+                      className={inputClass}
+                    >
+                      {CATEGORIES.map((category) => (
+                        <option
+                          key={category}
+                          value={category}
+                        >
+                          {category}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <Field
+                    label="Location"
+                    required
+                  >
+                    <input
+                      name="location"
+                      type="text"
+                      required
+                      maxLength={150}
+                      value={form.location}
+                      onChange={updateField}
+                      placeholder="Dhaka, Bangladesh"
+                      className={inputClass}
+                    />
+                  </Field>
+
+                  <Field label="Brand">
+                    <input
+                      name="brand"
+                      type="text"
+                      maxLength={100}
+                      value={form.brand}
+                      onChange={updateField}
+                      placeholder="Canon"
+                      className={inputClass}
+                    />
+                  </Field>
+
+                  <Field label="Model">
+                    <input
+                      name="model"
+                      type="text"
+                      maxLength={100}
+                      value={form.model}
+                      onChange={updateField}
+                      placeholder="EOS R50"
+                      className={inputClass}
+                    />
+                  </Field>
+                </div>
+
+                <Field
+                  label="Condition"
+                  required
+                >
+                  <select
+                    name="condition"
+                    required
+                    value={form.condition}
+                    onChange={updateField}
+                    className={inputClass}
+                  >
+                    {CONDITIONS.map((condition) => (
+                      <option
+                        key={condition.value}
+                        value={condition.value}
+                      >
+                        {condition.label}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+            </section>
+
+            {/* RENTAL INFORMATION */}
+            <section className="rounded-[24px] border border-[#e2eae3] bg-white p-6 shadow-[0_8px_30px_rgba(20,45,35,0.035)] sm:p-9">
+              <SectionHeading
+                number="02"
+                title="Rental Information"
+                description="Set the rental period, pricing and available quantity."
               />
-            </div>
 
-            <div className="grid gap-6 sm:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="equipment-category"
-                  className="mb-2 block text-sm font-semibold"
+              <div className="grid gap-6 sm:grid-cols-2">
+                <Field
+                  label="Rental Type"
+                  required
                 >
-                  Category *
-                </label>
-
-                <select
-                  id="equipment-category"
-                  name="category"
-                  value={form.category}
-                  onChange={updateField}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-700"
-                >
-                  {CATEGORIES.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
+                  <select
+                    name="rentalType"
+                    required
+                    value={form.rentalType}
+                    onChange={updateField}
+                    className={inputClass}
+                  >
+                    <option value="daily">
+                      Daily
                     </option>
-                  ))}
-                </select>
-              </div>
 
-              <div>
-                <label
-                  htmlFor="equipment-location"
-                  className="mb-2 block text-sm font-semibold"
-                >
-                  Location *
-                </label>
+                    <option value="weekly">
+                      Weekly
+                    </option>
 
-                <input
-                  id="equipment-location"
-                  name="location"
+                    <option value="monthly">
+                      Monthly
+                    </option>
+                  </select>
+                </Field>
+
+                <Field
+                  label={`Rental Price (BDT / ${form.rentalType})`}
                   required
-                  value={form.location}
-                  onChange={updateField}
-                  placeholder="Dhaka, Bangladesh"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-700"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="rental-type"
-                  className="mb-2 block text-sm font-semibold"
                 >
-                  Rental Type *
-                </label>
+                  <input
+                    name="rentalPrice"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    required
+                    value={form.rentalPrice}
+                    onChange={updateField}
+                    placeholder={
+                      form.rentalType === "daily"
+                        ? "1200"
+                        : form.rentalType === "weekly"
+                          ? "7500"
+                          : "25000"
+                    }
+                    className={inputClass}
+                  />
+                </Field>
 
-                <select
-                  id="rental-type"
-                  name="rentalType"
-                  value={form.rentalType}
-                  onChange={updateField}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-700"
-                >
-                  <option value="daily">Daily</option>
-                  <option value="hourly">Hourly</option>
-                </select>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="rental-price"
-                  className="mb-2 block text-sm font-semibold"
-                >
-                  Rental Price (BDT) *
-                </label>
-
-                <input
-                  id="rental-price"
-                  name="rentalPrice"
-                  type="number"
-                  min="1"
-                  step="0.01"
+                <Field
+                  label="Available Quantity"
                   required
-                  value={form.rentalPrice}
-                  onChange={updateField}
-                  placeholder="1500"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-700"
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="available-quantity"
-                  className="mb-2 block text-sm font-semibold"
                 >
-                  Available Quantity *
-                </label>
+                  <input
+                    name="availableQuantity"
+                    type="number"
+                    min="1"
+                    step="1"
+                    required
+                    value={form.availableQuantity}
+                    onChange={updateField}
+                    className={inputClass}
+                  />
+                </Field>
 
-                <input
-                  id="available-quantity"
-                  name="availableQuantity"
-                  type="number"
-                  min="1"
-                  step="1"
-                  required
-                  value={form.availableQuantity}
-                  onChange={updateField}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-700"
-                />
+                <div className="flex items-center rounded-xl border border-[#e2ebe3] bg-[#f4f8f4] p-4">
+                  <p className="text-xs leading-6 text-[#687b6d]">
+                    Pricing is in BDT. Customers will
+                    see this rate for the selected
+                    rental period.
+                  </p>
+                </div>
               </div>
-            </div>
+            </section>
 
-            <div>
+            {/* RENTAL TERMS */}
+            <section className="rounded-[24px] border border-[#e2eae3] bg-white p-6 shadow-[0_8px_30px_rgba(20,45,35,0.035)] sm:p-9">
+              <SectionHeading
+                number="03"
+                title="Rental Terms"
+                description="Explain the rental rules and any special conditions."
+              />
+
+              <Field label="Rental Terms and Conditions">
+                <textarea
+                  name="rentalTerms"
+                  rows={5}
+                  value={form.rentalTerms}
+                  onChange={updateField}
+                  placeholder="Example: Return equipment in the same condition. Keep all accessories together. Contact the owner before extending the rental period."
+                  className={`${inputClass} resize-y`}
+                />
+              </Field>
+
+              <p className="mt-3 text-xs leading-6 text-[#829087]">
+                This information will appear on the
+                public Equipment Details page after
+                approval.
+              </p>
+            </section>
+
+            {/* IMAGE UPLOAD */}
+            <section className="rounded-[24px] border border-[#e2eae3] bg-white p-6 shadow-[0_8px_30px_rgba(20,45,35,0.035)] sm:p-9">
+              <SectionHeading
+                number="04"
+                title="Equipment Image"
+                description="Upload a clear photo so customers can identify the item."
+              />
+
               <label
                 htmlFor="equipment-image"
-                className="mb-2 block text-sm font-semibold"
+                className="block cursor-pointer rounded-[20px] border-2 border-dashed border-[#d5e2d7] bg-[#fafcf9] p-8 text-center transition hover:border-[#174f43] hover:bg-[#f1f7f2]"
               >
-                Equipment Image *
+                <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#eaf3ec] text-[#174f43]">
+                  <FileIcon />
+                </span>
+
+                <span className="mt-4 block text-sm font-bold text-[#174f43]">
+                  {imageFile
+                    ? imageFile.name
+                    : "Choose Equipment Image"}
+                </span>
+
+                <span className="mt-2 block text-xs text-[#819086]">
+                  JPG, PNG or WebP · Maximum 5 MB
+                </span>
+
+                <input
+                  id="equipment-image"
+                  ref={fileInputRef}
+                  name="image"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={selectImage}
+                  required={!imageFile}
+                  className="sr-only"
+                />
               </label>
 
-              <input
-                id="equipment-image"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={selectImage}
-                required={!imageFile}
-                className="w-full rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-sm"
-              />
-
-              <p className="mt-2 text-xs text-slate-500">
-                JPG, PNG, or WebP. Maximum 5 MB.
-              </p>
-
               {imagePreview && (
-                <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200">
-                  {/* Local image preview before upload */}
+                <div className="mt-6 overflow-hidden rounded-[20px] border border-[#e2eae3] bg-[#f4f7f2]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={imagePreview}
                     alt="Selected equipment preview"
-                    className="h-64 w-full object-contain bg-slate-50"
+                    className="h-72 w-full object-contain p-4"
                   />
+
+                  <div className="border-t border-[#e2eae3] bg-white px-5 py-3 text-xs text-[#738177]">
+                    Image preview · Uploaded when
+                    you submit the listing
+                  </div>
                 </div>
               )}
-            </div>
+            </section>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-emerald-900 px-6 py-4 text-base font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {loading
-                ? "Uploading image and saving equipment..."
-                : "Submit Equipment"}
-            </button>
+            {/* SUBMIT ACTION */}
+            <section className="rounded-[24px] border border-[#e2eae3] bg-white p-6 shadow-[0_8px_30px_rgba(20,45,35,0.035)] sm:p-9">
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-base font-extrabold">
+                    Ready to publish?
+                  </h2>
+
+                  <p className="mt-2 max-w-md text-xs leading-6 text-[#78877d]">
+                    Your equipment will be saved
+                    as pending. An Admin must
+                    approve it before customers can
+                    see or rent it.
+                  </p>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex min-h-14 items-center justify-center rounded-xl bg-[#174f43] px-8 py-4 text-sm font-bold text-white shadow-[0_7px_18px_rgba(23,79,67,0.15)] transition hover:bg-[#236959] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {loading
+                    ? "Uploading and saving..."
+                    : "Submit Equipment"}
+                </button>
+              </div>
+            </section>
           </form>
         </div>
-
-        <p className="mt-6 text-center text-xs text-slate-500">
-          EquipRent — Equipment Rental Marketplace
-        </p>
-      </div>
-    </main>
+      </main>
+    </>
   );
 }

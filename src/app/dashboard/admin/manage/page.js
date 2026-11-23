@@ -21,7 +21,13 @@ const categories = [
   "Electronics",
   "Event Equipment",
   "Camera",
+  "Photography",
+  "Audio",
+  "Lighting",
   "Tools",
+  "Sports",
+  "Camping",
+  "Other",
 ];
 
 const money = (value) =>
@@ -49,6 +55,7 @@ function Status({ value }) {
     "confirmed",
     "completed",
     "paid",
+    "admin",
   ];
 
   const danger = [
@@ -82,7 +89,9 @@ async function getToken(signal) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok || !data.token) {
-    throw new Error("Please sign in with your Admin account.");
+    throw new Error(
+      "Please sign in with your Admin account.",
+    );
   }
 
   return data.token;
@@ -108,7 +117,9 @@ async function apiRequest(path, method = "GET", body) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.message || "Request failed.");
+    throw new Error(
+      data.message || "Request failed.",
+    );
   }
 
   return data;
@@ -124,7 +135,9 @@ function initialEquipmentForm(item) {
       item.rentalPrice ?? item.pricePerDay ?? "",
     ),
     rentalType: item.rentalType || "daily",
-    availableQuantity: String(item.availableQuantity ?? 1),
+    availableQuantity: String(
+      item.availableQuantity ?? 1,
+    ),
     availability: item.availability !== false,
     condition: item.condition || "",
     brand: item.brand || "",
@@ -170,6 +183,7 @@ function EquipmentEditModal({
   const [form, setForm] = useState(() =>
     initialEquipmentForm(equipment),
   );
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -184,7 +198,7 @@ function EquipmentEditModal({
     if (!saving) onClose();
   }
 
-  const save = async (event) => {
+  async function save(event) {
     event.preventDefault();
 
     if (saving) return;
@@ -192,13 +206,17 @@ function EquipmentEditModal({
     setError("");
 
     const rentalPrice = Number(form.rentalPrice);
-    const availableQuantity = Number(form.availableQuantity);
+    const availableQuantity = Number(
+      form.availableQuantity,
+    );
 
     if (
       !Number.isSafeInteger(rentalPrice) ||
       rentalPrice <= 0
     ) {
-      setError("Rental price must be a positive whole BDT amount.");
+      setError(
+        "Rental price must be a positive whole BDT amount.",
+      );
       return;
     }
 
@@ -206,14 +224,13 @@ function EquipmentEditModal({
       !Number.isSafeInteger(availableQuantity) ||
       availableQuantity < 0
     ) {
-      setError("Quantity must be a non-negative whole number.");
+      setError(
+        "Quantity must be a non-negative whole number.",
+      );
       return;
     }
 
-    if (
-      form.availability &&
-      availableQuantity < 1
-    ) {
+    if (form.availability && availableQuantity < 1) {
       setError(
         "Available equipment must have at least one unit.",
       );
@@ -238,10 +255,12 @@ function EquipmentEditModal({
       image: form.image.trim(),
     };
 
-    // Only send fields the admin actually changed.
+    // Send only the fields that were changed.
     const changes = {};
 
-    for (const [field, value] of Object.entries(normalized)) {
+    for (const [field, value] of Object.entries(
+      normalized,
+    )) {
       let previous = original[field];
 
       if (
@@ -271,7 +290,8 @@ function EquipmentEditModal({
       );
 
       onSaved(
-        result.message || "Equipment updated successfully.",
+        result.message ||
+          "Equipment updated successfully.",
       );
     } catch (cause) {
       setError(
@@ -279,14 +299,14 @@ function EquipmentEditModal({
           ? cause.message
           : "Could not update equipment.",
       );
-    } finally {
       setSaving(false);
     }
-  };
+  }
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-[#0d211c]/70 p-3 sm:p-6"
+      role="presentation"
+      className="fixed inset-0 z-[150] flex items-start justify-center overflow-y-auto bg-[#10241d]/65 p-4 backdrop-blur-sm sm:p-8"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           close();
@@ -296,18 +316,18 @@ function EquipmentEditModal({
       <section
         role="dialog"
         aria-modal="true"
-        aria-labelledby="admin-edit-title"
-        className="my-auto max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl sm:p-9"
+        aria-labelledby="admin-edit-equipment-title"
+        className="my-auto w-full max-w-3xl rounded-3xl border border-[#e3e9e3] bg-white p-6 shadow-2xl sm:p-8"
       >
-        <div className="mb-7 flex items-start justify-between gap-4 border-b border-slate-100 pb-6">
+        <div className="mb-7 flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[2px] text-[#df704b]">
               Equipment Management
             </p>
 
             <h2
-              id="admin-edit-title"
-              className="mt-3 text-2xl font-extrabold tracking-tight sm:text-3xl"
+              id="admin-edit-equipment-title"
+              className="mt-2 text-2xl font-extrabold tracking-tight text-[#174f43]"
             >
               Edit equipment
             </h2>
@@ -351,6 +371,7 @@ function EquipmentEditModal({
 
             <label className="block text-sm font-semibold sm:col-span-2">
               Description
+
               <textarea
                 required
                 rows={3}
@@ -364,6 +385,7 @@ function EquipmentEditModal({
 
             <label className="block text-sm font-semibold">
               Category
+
               <select
                 required
                 value={form.category}
@@ -380,11 +402,16 @@ function EquipmentEditModal({
                   )}
 
                 {!form.category && (
-                  <option value="">Select category</option>
+                  <option value="">
+                    Select category
+                  </option>
                 )}
 
                 {categories.map((category) => (
-                  <option key={category} value={category}>
+                  <option
+                    key={category}
+                    value={category}
+                  >
                     {category}
                   </option>
                 ))}
@@ -395,7 +422,9 @@ function EquipmentEditModal({
               label="Location"
               required
               value={form.location}
-              onChange={(value) => update("location", value)}
+              onChange={(value) =>
+                update("location", value)
+              }
             />
 
             <Field
@@ -411,6 +440,7 @@ function EquipmentEditModal({
 
             <label className="block text-sm font-semibold">
               Rental Type
+
               <select
                 value={form.rentalType}
                 onChange={(event) =>
@@ -437,6 +467,7 @@ function EquipmentEditModal({
 
             <label className="block text-sm font-semibold">
               Availability
+
               <select
                 value={String(form.availability)}
                 onChange={(event) =>
@@ -463,13 +494,17 @@ function EquipmentEditModal({
             <Field
               label="Brand"
               value={form.brand}
-              onChange={(value) => update("brand", value)}
+              onChange={(value) =>
+                update("brand", value)
+              }
             />
 
             <Field
               label="Model"
               value={form.model}
-              onChange={(value) => update("model", value)}
+              onChange={(value) =>
+                update("model", value)
+              }
             />
 
             <div className="sm:col-span-2">
@@ -477,18 +512,24 @@ function EquipmentEditModal({
                 label="Image URL (HTTPS)"
                 type="url"
                 value={form.image}
-                onChange={(value) => update("image", value)}
+                onChange={(value) =>
+                  update("image", value)
+                }
                 placeholder="https://..."
               />
             </div>
 
             <label className="block text-sm font-semibold sm:col-span-2">
               Rental Terms and Conditions
+
               <textarea
                 rows={3}
                 value={form.rentalTerms}
                 onChange={(event) =>
-                  update("rentalTerms", event.target.value)
+                  update(
+                    "rentalTerms",
+                    event.target.value,
+                  )
                 }
                 className="mt-2 w-full rounded-xl border border-slate-200 bg-[#fafbf9] px-4 py-3 text-sm font-normal outline-none focus:border-[#174f43]"
               />
@@ -534,9 +575,7 @@ export default function AdminManagementPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
   const [refresh, setRefresh] = useState(0);
-
   const [editing, setEditing] = useState(null);
-
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -556,11 +595,14 @@ export default function AdminManagementPage() {
           },
         );
 
-        const data = await response.json().catch(() => ({}));
+        const data = await response
+          .json()
+          .catch(() => ({}));
 
         if (!response.ok) {
           throw new Error(
-            data.message || "Unable to load management data.",
+            data.message ||
+              "Unable to load management data.",
           );
         }
 
@@ -569,7 +611,11 @@ export default function AdminManagementPage() {
       .then((data) => {
         if (controller.signal.aborted) return;
 
-        setItems(Array.isArray(data.data) ? data.data : []);
+        setItems(
+          Array.isArray(data.data)
+            ? data.data
+            : [],
+        );
 
         setPagination({
           total: data.pagination?.total || 0,
@@ -621,13 +667,24 @@ export default function AdminManagementPage() {
   }
 
   async function changeRole(user, nextRole) {
-    if (busy || user.role === nextRole) return;
-
     if (
-      !window.confirm(
-        `Change ${user.name || user.email} to ${nextRole}?`,
-      )
+      busy ||
+      user.role === nextRole ||
+      user.role === "admin"
     ) {
+      return;
+    }
+
+    const roleLabel =
+      nextRole.charAt(0).toUpperCase() +
+      nextRole.slice(1);
+
+    const warning =
+      nextRole === "admin"
+        ? `WARNING: ${user.name || user.email} will receive full Admin access to manage users, equipment, and rentals.\n\nAre you sure you trust this account?`
+        : `Change ${user.name || user.email} to ${roleLabel}?`;
+
+    if (!window.confirm(warning)) {
       return;
     }
 
@@ -643,8 +700,10 @@ export default function AdminManagementPage() {
       );
 
       setMessage(
-        data.message || "User role updated successfully.",
+        data.message ||
+          "User role updated successfully.",
       );
+
       reload();
     } catch (cause) {
       setError(
@@ -675,8 +734,10 @@ export default function AdminManagementPage() {
       );
 
       setMessage(
-        data.message || `Equipment ${action} successful.`,
+        data.message ||
+          `Equipment ${action} successful.`,
       );
+
       reload();
     } catch (cause) {
       setError(
@@ -711,10 +772,14 @@ export default function AdminManagementPage() {
       );
 
       setMessage(
-        data.message || "Equipment removed successfully.",
+        data.message ||
+          "Equipment removed successfully.",
       );
 
-      if (items.length === 1 && page > 1) {
+      if (
+        items.length === 1 &&
+        page > 1
+      ) {
         changePage(page - 1);
       } else {
         reload();
@@ -741,13 +806,15 @@ export default function AdminManagementPage() {
     <main className="min-h-screen bg-[#f7f8f5] px-4 py-8 text-[#192321] sm:px-6">
       <div className="mx-auto max-w-7xl">
         <header className="mb-10 flex flex-wrap items-center justify-between gap-4 border-b border-[#e3e8e3] pb-6">
-          <Link
-            href="/"
-            className="text-2xl font-extrabold tracking-tight text-[#174f43]"
-          >
-            EquipRent
-            <span className="text-[#df704b]">.</span>
-          </Link>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[2px] text-[#df704b]">
+              EQUIPRENT ADMIN
+            </p>
+
+            <p className="mt-2 text-lg font-extrabold text-[#174f43]">
+              Management Center
+            </p>
+          </div>
 
           <nav className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Link
@@ -783,8 +850,8 @@ export default function AdminManagementPage() {
           </h1>
 
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-            Manage marketplace users, equipment listings and
-            rental records from one place.
+            Manage marketplace users, equipment listings,
+            and rental records from one place.
           </p>
         </section>
 
@@ -828,7 +895,11 @@ export default function AdminManagementPage() {
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 p-6 sm:p-8">
             <div>
               <h2 className="text-xl font-bold">
-                {tabs.find((item) => item.key === tab)?.label}
+                {
+                  tabs.find(
+                    (item) => item.key === tab,
+                  )?.label
+                }
               </h2>
 
               <p className="mt-2 text-xs text-slate-500">
@@ -875,33 +946,67 @@ export default function AdminManagementPage() {
                 <thead className="bg-[#f5f7f4] text-xs uppercase tracking-wide text-slate-500">
                   {tab === "users" && (
                     <tr>
-                      <th className="px-5 py-4">User</th>
-                      <th className="px-5 py-4">Email</th>
-                      <th className="px-5 py-4">Registered</th>
-                      <th className="px-5 py-4">Role</th>
-                      <th className="px-5 py-4">Actions</th>
+                      <th className="px-5 py-4">
+                        User
+                      </th>
+                      <th className="px-5 py-4">
+                        Email
+                      </th>
+                      <th className="px-5 py-4">
+                        Registered
+                      </th>
+                      <th className="px-5 py-4">
+                        Role
+                      </th>
+                      <th className="px-5 py-4">
+                        Actions
+                      </th>
                     </tr>
                   )}
 
                   {tab === "equipment" && (
                     <tr>
-                      <th className="px-5 py-4">Equipment</th>
-                      <th className="px-5 py-4">Category</th>
-                      <th className="px-5 py-4">Price</th>
-                      <th className="px-5 py-4">Status</th>
-                      <th className="px-5 py-4">Actions</th>
+                      <th className="px-5 py-4">
+                        Equipment
+                      </th>
+                      <th className="px-5 py-4">
+                        Category
+                      </th>
+                      <th className="px-5 py-4">
+                        Price
+                      </th>
+                      <th className="px-5 py-4">
+                        Status
+                      </th>
+                      <th className="px-5 py-4">
+                        Actions
+                      </th>
                     </tr>
                   )}
 
                   {tab === "rentals" && (
                     <tr>
-                      <th className="px-5 py-4">Customer</th>
-                      <th className="px-5 py-4">Equipment</th>
-                      <th className="px-5 py-4">Owner</th>
-                      <th className="px-5 py-4">Rental Dates</th>
-                      <th className="px-5 py-4">Amount</th>
-                      <th className="px-5 py-4">Payment</th>
-                      <th className="px-5 py-4">Booking</th>
+                      <th className="px-5 py-4">
+                        Customer
+                      </th>
+                      <th className="px-5 py-4">
+                        Equipment
+                      </th>
+                      <th className="px-5 py-4">
+                        Owner
+                      </th>
+                      <th className="px-5 py-4">
+                        Rental Dates
+                      </th>
+                      <th className="px-5 py-4">
+                        Amount
+                      </th>
+                      <th className="px-5 py-4">
+                        Payment
+                      </th>
+                      <th className="px-5 py-4">
+                        Booking
+                      </th>
                     </tr>
                   )}
                 </thead>
@@ -921,18 +1026,25 @@ export default function AdminManagementPage() {
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img
                                     src={item.image}
-                                    alt={item.name || "User"}
+                                    alt={
+                                      item.name ||
+                                      "User"
+                                    }
                                     className="h-full w-full object-cover"
                                   />
                                 ) : (
-                                  (item.name || "U")
+                                  (
+                                    item.name ||
+                                    "U"
+                                  )
                                     .charAt(0)
                                     .toUpperCase()
                                 )}
                               </div>
 
                               <span className="font-bold">
-                                {item.name || "Unnamed User"}
+                                {item.name ||
+                                  "Unnamed User"}
                               </span>
                             </div>
                           </td>
@@ -942,38 +1054,54 @@ export default function AdminManagementPage() {
                           </td>
 
                           <td className="px-5 py-5 text-slate-600">
-                            {formatDate(item.createdAt)}
+                            {formatDate(
+                              item.createdAt,
+                            )}
                           </td>
 
                           <td className="px-5 py-5">
-                            <Status value={item.role} />
+                            <Status
+                              value={item.role}
+                            />
                           </td>
 
                           <td className="px-5 py-5">
                             {item.role === "admin" ? (
-                              <span className="text-xs text-slate-400">
+                              <span className="inline-flex rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs font-bold text-[#174f43]">
                                 Protected Admin
                               </span>
                             ) : (
                               <select
                                 aria-label={`Change role for ${
-                                  item.name || item.email
+                                  item.name ||
+                                  item.email
                                 }`}
-                                value={item.role}
-                                disabled={Boolean(busy)}
-                                onChange={(event) =>
+                                value={
+                                  item.role ||
+                                  "customer"
+                                }
+                                disabled={Boolean(
+                                  busy,
+                                )}
+                                onChange={(
+                                  event,
+                                ) =>
                                   changeRole(
                                     item,
-                                    event.target.value,
+                                    event.target
+                                      .value,
                                   )
                                 }
-                                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm disabled:opacity-50"
+                                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-[#174f43] outline-none focus:border-[#174f43] disabled:opacity-50"
                               >
                                 <option value="customer">
                                   Customer
                                 </option>
                                 <option value="owner">
                                   Owner
+                                </option>
+                                <option value="admin">
+                                  Admin
                                 </option>
                               </select>
                             )}
@@ -990,7 +1118,9 @@ export default function AdminManagementPage() {
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img
                                     src={item.image}
-                                    alt={item.name}
+                                    alt={
+                                      item.name
+                                    }
                                     className="h-full w-full object-cover"
                                   />
                                 )}
@@ -1002,7 +1132,9 @@ export default function AdminManagementPage() {
                                 </p>
 
                                 <p className="mt-1 text-xs text-slate-500">
-                                  {item.location}
+                                  {
+                                    item.location
+                                  }
                                 </p>
                               </div>
                             </div>
@@ -1020,43 +1152,56 @@ export default function AdminManagementPage() {
                           </td>
 
                           <td className="px-5 py-5">
-                            <Status value={item.status} />
+                            <Status
+                              value={
+                                item.status
+                              }
+                            />
                           </td>
 
                           <td className="px-5 py-5">
                             <div className="flex flex-wrap gap-2">
                               <button
                                 type="button"
-                                disabled={Boolean(busy)}
+                                disabled={Boolean(
+                                  busy,
+                                )}
                                 onClick={() => {
                                   setError("");
                                   setMessage("");
-                                  setEditing(item);
+                                  setEditing(
+                                    item,
+                                  );
                                 }}
                                 className="rounded-lg border border-[#174f43] px-3 py-2 text-xs font-bold text-[#174f43] hover:bg-emerald-50 disabled:opacity-50"
                               >
                                 Edit
                               </button>
 
-                              {item.status === "pending" && (
+                              {item.status ===
+                                "pending" && (
                                 <>
                                   <button
                                     type="button"
-                                    disabled={Boolean(busy)}
+                                    disabled={Boolean(
+                                      busy,
+                                    )}
                                     onClick={() =>
                                       reviewEquipment(
                                         item,
                                         "approve",
                                       )
                                     }
-                                    className="rounded-lg bg-emerald-800 px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
+                                    className="rounded-lg bg-[#174f43] px-3 py-2 text-xs font-bold text-white disabled:opacity-50"
                                   >
                                     Approve
                                   </button>
 
                                   <button
                                     type="button"
-                                    disabled={Boolean(busy)}
+                                    disabled={Boolean(
+                                      busy,
+                                    )}
                                     onClick={() =>
                                       reviewEquipment(
                                         item,
@@ -1072,9 +1217,13 @@ export default function AdminManagementPage() {
 
                               <button
                                 type="button"
-                                disabled={Boolean(busy)}
+                                disabled={Boolean(
+                                  busy,
+                                )}
                                 onClick={() =>
-                                  deleteEquipment(item)
+                                  deleteEquipment(
+                                    item,
+                                  )
                                 }
                                 className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50 disabled:opacity-50"
                               >
@@ -1094,7 +1243,9 @@ export default function AdminManagementPage() {
                             </p>
 
                             <p className="mt-1 text-xs text-slate-500">
-                              {item.customerEmail}
+                              {
+                                item.customerEmail
+                              }
                             </p>
                           </td>
 
@@ -1109,27 +1260,37 @@ export default function AdminManagementPage() {
                           </td>
 
                           <td className="px-5 py-5 text-xs leading-6">
-                            {formatDate(item.startDate)}
-                            <br />
-                            <span className="text-slate-400">
+                            {formatDate(
+                              item.startDate,
+                            )}
+                            <span className="block text-slate-400">
                               to
                             </span>
-                            <br />
-                            {formatDate(item.endDate)}
+                            {formatDate(
+                              item.endDate,
+                            )}
                           </td>
 
                           <td className="px-5 py-5 font-bold text-[#174f43]">
-                            {money(item.totalPrice)}
+                            {money(
+                              item.totalPrice,
+                            )}
                           </td>
 
                           <td className="px-5 py-5">
                             <Status
-                              value={item.paymentStatus}
+                              value={
+                                item.paymentStatus
+                              }
                             />
                           </td>
 
                           <td className="px-5 py-5">
-                            <Status value={item.status} />
+                            <Status
+                              value={
+                                item.status
+                              }
+                            />
                           </td>
                         </>
                       )}
@@ -1140,34 +1301,46 @@ export default function AdminManagementPage() {
             </div>
           )}
 
-          {!loading && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-center gap-4 border-t border-slate-100 p-6">
-              <button
-                type="button"
-                disabled={page <= 1 || Boolean(busy)}
-                onClick={() => changePage(page - 1)}
-                className="rounded-xl border border-slate-200 px-5 py-2 text-sm font-semibold disabled:opacity-40"
-              >
-                Previous
-              </button>
+          {!loading &&
+            pagination.totalPages > 1 && (
+              <div className="flex items-center justify-center gap-4 border-t border-slate-100 p-6">
+                <button
+                  type="button"
+                  disabled={
+                    page <= 1 ||
+                    Boolean(busy)
+                  }
+                  onClick={() =>
+                    changePage(page - 1)
+                  }
+                  className="rounded-xl border border-slate-200 px-5 py-2 text-sm font-semibold disabled:opacity-40"
+                >
+                  Previous
+                </button>
 
-              <span className="text-sm text-slate-600">
-                Page {page} of {pagination.totalPages}
-              </span>
+                <span className="text-sm text-slate-600">
+                  Page {page} of{" "}
+                  {
+                    pagination.totalPages
+                  }
+                </span>
 
-              <button
-                type="button"
-                disabled={
-                  page >= pagination.totalPages ||
-                  Boolean(busy)
-                }
-                onClick={() => changePage(page + 1)}
-                className="rounded-xl border border-slate-200 px-5 py-2 text-sm font-semibold disabled:opacity-40"
-              >
-                Next
-              </button>
-            </div>
-          )}
+                <button
+                  type="button"
+                  disabled={
+                    page >=
+                      pagination.totalPages ||
+                    Boolean(busy)
+                  }
+                  onClick={() =>
+                    changePage(page + 1)
+                  }
+                  className="rounded-xl border border-slate-200 px-5 py-2 text-sm font-semibold disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            )}
         </section>
 
         <footer className="mt-12 border-t border-slate-200 py-8 text-center text-xs text-slate-500">
@@ -1177,10 +1350,16 @@ export default function AdminManagementPage() {
 
       {editing && (
         <EquipmentEditModal
-          key={String(editing._id)}
+          key={String(
+            editing._id,
+          )}
           equipment={editing}
-          onClose={() => setEditing(null)}
-          onSaved={onEquipmentSaved}
+          onClose={() =>
+            setEditing(null)
+          }
+          onSaved={
+            onEquipmentSaved
+          }
         />
       )}
     </main>

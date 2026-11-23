@@ -18,6 +18,24 @@ const categories = [
   "Other",
 ];
 
+const rentalTypes = ["daily", "weekly", "monthly"];
+const conditions = ["new", "excellent", "good", "fair"];
+
+const initialForm = {
+  name: "",
+  description: "",
+  category: "Camera",
+  brand: "",
+  model: "",
+  condition: "good",
+  rentalTerms: "",
+  location: "",
+  rentalType: "daily",
+  rentalPrice: "",
+  availableQuantity: "1",
+  availability: true,
+};
+
 async function getToken() {
   const response = await fetch(`${API}/api/auth/token`, {
     credentials: "include",
@@ -41,16 +59,55 @@ function priceOf(item) {
   return item.rentalPrice ?? item.pricePerDay ?? 0;
 }
 
-function statusColor(status) {
+function formatPrice(value) {
+  return Number(value || 0).toLocaleString("en-BD", {
+    maximumFractionDigits: 2,
+  });
+}
+
+function approvalColor(status) {
   if (status === "approved") {
-    return "bg-green-100 text-green-800";
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
   }
 
   if (status === "rejected") {
-    return "bg-red-100 text-red-800";
+    return "border-red-200 bg-red-50 text-red-700";
   }
 
-  return "bg-yellow-100 text-yellow-800";
+  return "border-amber-200 bg-amber-50 text-amber-700";
+}
+
+function availabilityInfo(item) {
+  const quantity = Number(item.availableQuantity ?? 1);
+
+  if (item.availability === false) {
+    return {
+      label: "Unavailable",
+      color: "border-slate-200 bg-slate-100 text-slate-600",
+    };
+  }
+
+  if (quantity <= 0) {
+    return {
+      label: "Out of Stock",
+      color: "border-red-200 bg-red-50 text-red-700",
+    };
+  }
+
+  return {
+    label: "Available",
+    color: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  };
+}
+
+function Badge({ children, className = "" }) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold capitalize ${className}`}
+    >
+      {children}
+    </span>
+  );
 }
 
 export default function OwnerEquipmentPage() {
@@ -66,45 +123,34 @@ export default function OwnerEquipmentPage() {
   const [success, setSuccess] = useState("");
 
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    category: "Camera",
-    location: "",
-    rentalType: "daily",
-    rentalPrice: "",
-    availableQuantity: "1",
-  });
+  const [form, setForm] = useState(initialForm);
 
   useEffect(() => {
     const controller = new AbortController();
 
-    // Fetch data asynchronously. No synchronous state update
-    // or state-changing function call inside this effect.
-    fetch(`${API}/api/auth/token`, {
-      credentials: "include",
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        if (!response.ok) {
+    async function loadEquipment() {
+      try {
+        const authResponse = await fetch(`${API}/api/auth/token`, {
+          credentials: "include",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+
+        if (!authResponse.ok) {
           throw new Error("Please sign in with your Owner account.");
         }
 
-        const data = await response.json();
+        const authData = await authResponse.json();
 
-        if (!data.token) {
+        if (!authData.token) {
           throw new Error("Authentication token unavailable.");
         }
 
-        return data.token;
-      })
-      .then(async (token) => {
         const response = await fetch(
           `${API}/api/equipment/my?page=${page}&limit=10`,
           {
             headers: {
-              Authorization: `Bearer ${token}`,
+              Authorization: `Bearer ${authData.token}`,
             },
             cache: "no-store",
             signal: controller.signal,
@@ -119,17 +165,13 @@ export default function OwnerEquipmentPage() {
           );
         }
 
-        return data;
-      })
-      .then((data) => {
         if (controller.signal.aborted) return;
 
         setItems(Array.isArray(data.data) ? data.data : []);
         setTotal(data.pagination?.total ?? 0);
         setTotalPages(data.pagination?.totalPages ?? 1);
         setError("");
-      })
-      .catch((cause) => {
+      } catch (cause) {
         if (controller.signal.aborted) return;
 
         setError(
@@ -137,16 +179,16 @@ export default function OwnerEquipmentPage() {
             ? cause.message
             : "Failed to load equipment.",
         );
-      })
-      .finally(() => {
+      } finally {
         if (!controller.signal.aborted) {
           setLoading(false);
         }
-      });
+      }
+    }
 
-    return () => {
-      controller.abort();
-    };
+    loadEquipment();
+
+    return () => controller.abort();
   }, [page, refresh]);
 
   function reload() {
@@ -155,7 +197,11 @@ export default function OwnerEquipmentPage() {
   }
 
   function changePage(nextPage) {
+    if (nextPage < 1 || nextPage > totalPages || busy) return;
+
     setLoading(true);
+    setError("");
+    setSuccess("");
     setPage(nextPage);
   }
 
@@ -168,21 +214,38 @@ export default function OwnerEquipmentPage() {
       name: item.name || "",
       description: item.description || "",
       category: item.category || "Other",
+      brand: item.brand || "",
+      model: item.model || "",
+      condition: conditions.includes(item.condition)
+        ? item.condition
+        : "good",
+      rentalTerms: item.rentalTerms || "",
       location: item.location || "",
-      rentalType: item.rentalType || "daily",
+      rentalType: rentalTypes.includes(item.rentalType)
+        ? item.rentalType
+        : "daily",
       rentalPrice: String(priceOf(item)),
       availableQuantity: String(item.availableQuantity ?? 1),
+      availability: item.availability !== false,
     });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function cancelEdit() {
+    if (busy) return;
+
+    setEditing(null);
+    setForm(initialForm);
+    setError("");
+  }
+
   function handleChange(event) {
-    const { name, value } = event.target;
+    const { name, value, type, checked } = event.target;
 
     setForm((previous) => ({
       ...previous,
-      [name]: value,
+      [name]: type === "checkbox" ? checked : value,
     }));
   }
 
@@ -194,17 +257,70 @@ export default function OwnerEquipmentPage() {
     const rentalPrice = Number(form.rentalPrice);
     const availableQuantity = Number(form.availableQuantity);
 
-    if (!Number.isFinite(rentalPrice) || rentalPrice <= 0) {
-      setError("Enter a valid rental price.");
+    if (
+      !form.name.trim() ||
+      !form.description.trim() ||
+      !form.category.trim() ||
+      !form.location.trim()
+    ) {
+      setError("Please complete all required fields.");
+      return;
+    }
+
+    if (!rentalTypes.includes(form.rentalType)) {
+      setError("Select a valid rental type.");
+      return;
+    }
+
+    if (!conditions.includes(form.condition)) {
+      setError("Select a valid equipment condition.");
       return;
     }
 
     if (
-      !Number.isInteger(availableQuantity) ||
-      availableQuantity < 1
+      form.rentalPrice.trim() === "" ||
+      !Number.isFinite(rentalPrice) ||
+      rentalPrice <= 0 ||
+      !Number.isSafeInteger(Math.round(rentalPrice * 100)) ||
+      Math.round(rentalPrice * 100) <= 0
     ) {
-      setError("Quantity must be at least 1.");
+      setError("Enter a valid rental price greater than zero.");
       return;
+    }
+
+    if (
+      form.availableQuantity.trim() === "" ||
+      !Number.isInteger(availableQuantity) ||
+      availableQuantity < 0
+    ) {
+      setError("Quantity must be a whole number of zero or more.");
+      return;
+    }
+
+    const payload = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      category: form.category.trim(),
+      location: form.location.trim(),
+      rentalType: form.rentalType,
+      rentalPrice,
+      availableQuantity,
+      condition: form.condition,
+      availability: form.availability,
+    };
+
+    // Optional fields cannot be sent as empty strings.
+    // Existing optional values are preserved when left blank.
+    if (form.brand.trim()) {
+      payload.brand = form.brand.trim();
+    }
+
+    if (form.model.trim()) {
+      payload.model = form.model.trim();
+    }
+
+    if (form.rentalTerms.trim()) {
+      payload.rentalTerms = form.rentalTerms.trim();
     }
 
     setBusy(true);
@@ -222,15 +338,7 @@ export default function OwnerEquipmentPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            name: form.name.trim(),
-            description: form.description.trim(),
-            category: form.category,
-            location: form.location.trim(),
-            rentalType: form.rentalType,
-            rentalPrice,
-            availableQuantity,
-          }),
+          body: JSON.stringify(payload),
         },
       );
 
@@ -243,13 +351,12 @@ export default function OwnerEquipmentPage() {
       }
 
       setEditing(null);
+      setForm(initialForm);
       setSuccess("Equipment updated successfully.");
       reload();
     } catch (cause) {
       setError(
-        cause instanceof Error
-          ? cause.message
-          : "Update failed.",
+        cause instanceof Error ? cause.message : "Update failed.",
       );
     } finally {
       setBusy(false);
@@ -292,92 +399,199 @@ export default function OwnerEquipmentPage() {
 
       if (editing?._id === item._id) {
         setEditing(null);
+        setForm(initialForm);
       }
 
       setSuccess("Equipment deleted successfully.");
 
       if (items.length === 1 && page > 1) {
-        changePage(page - 1);
+        setLoading(true);
+        setPage(page - 1);
       } else {
         reload();
       }
     } catch (cause) {
       setError(
-        cause instanceof Error
-          ? cause.message
-          : "Delete failed.",
+        cause instanceof Error ? cause.message : "Delete failed.",
       );
     } finally {
       setBusy(false);
     }
   }
 
+  const availableCount = items.filter(
+    (item) =>
+      item.availability !== false &&
+      Number(item.availableQuantity ?? 1) > 0,
+  ).length;
+
+  const approvedCount = items.filter(
+    (item) => item.status === "approved",
+  ).length;
+
+  const pendingCount = items.filter(
+    (item) => !item.status || item.status === "pending",
+  ).length;
+
+  const inputStyle =
+    "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100";
+
+  const labelStyle = "block text-sm font-semibold text-slate-700";
+
   return (
-    <main className="min-h-screen bg-[#f7f8f5] px-4 py-10 text-slate-900">
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-10 flex flex-wrap items-center justify-between gap-4">
+    <main className="min-h-screen bg-[#f7f8f5] text-slate-900">
+      {/* Navigation */}
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
           <Link
             href="/"
-            className="text-2xl font-extrabold text-emerald-900"
+            className="text-2xl font-black tracking-tight text-emerald-950"
           >
             EquipRent<span className="text-amber-500">.</span>
           </Link>
 
-          <div className="flex gap-3">
+          <nav className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Link
               href="/"
-              className="rounded-full border bg-white px-5 py-2 text-sm font-semibold"
+              className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
             >
               Home
             </Link>
 
             <Link
+              href="/dashboard/owner"
+              className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+            >
+              Dashboard
+            </Link>
+
+            <Link
               href="/dashboard/owner/add-equipment"
-              className="rounded-full bg-emerald-900 px-5 py-2 text-sm font-semibold text-white"
+              className="rounded-full bg-emerald-900 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-emerald-800"
             >
               + Add Equipment
             </Link>
+          </nav>
+        </div>
+      </header>
+
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        {/* Page Heading */}
+        <section className="mb-8">
+          <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-emerald-700">
+            Owner Dashboard
+          </p>
+
+          <div className="mt-3 flex flex-wrap items-end justify-between gap-5">
+            <div>
+              <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">
+                My Equipment
+              </h1>
+
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500 sm:text-base">
+                Manage your rental listings, update pricing, control
+                availability, and monitor approval status.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={reload}
+              disabled={busy || loading}
+              className="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            >
+              {loading ? "Refreshing..." : "Refresh Listings"}
+            </button>
           </div>
-        </header>
+        </section>
 
-        <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">
-          Owner Dashboard
-        </p>
-
-        <h1 className="mt-2 text-4xl font-bold">My Equipment</h1>
-
-        <p className="mb-8 mt-3 text-slate-600">
-          View, edit, and manage your equipment listings.
-        </p>
-
+        {/* Notifications */}
         {error && (
-          <p
+          <div
             role="alert"
-            className="mb-5 rounded-xl bg-red-50 p-4 text-red-700"
+            className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700"
           >
             {error}
-          </p>
+          </div>
         )}
 
         {success && (
-          <p
+          <div
             role="status"
-            className="mb-5 rounded-xl bg-green-50 p-4 text-green-800"
+            className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-semibold text-emerald-800"
           >
             {success}
-          </p>
+          </div>
         )}
 
+        {/* Summary Cards */}
+        <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {[
+            {
+              label: "Total Listings",
+              value: total,
+              accent: "text-emerald-900",
+            },
+            {
+              label: "Available",
+              value: availableCount,
+              accent: "text-emerald-700",
+            },
+            {
+              label: "Approved",
+              value: approvedCount,
+              accent: "text-blue-700",
+            },
+            {
+              label: "Pending",
+              value: pendingCount,
+              accent: "text-amber-700",
+            },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
+            >
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                {stat.label}
+              </p>
+
+              <p className={`mt-3 text-3xl font-black ${stat.accent}`}>
+                {stat.value}
+              </p>
+
+              {stat.label !== "Total Listings" && (
+                <p className="mt-2 text-xs text-slate-400">
+                  Current page
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Edit Equipment */}
         {editing && (
-          <section className="mb-8 rounded-3xl border bg-white p-6 shadow-sm">
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Edit Equipment</h2>
+          <section className="mb-8 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 bg-emerald-950 px-6 py-6 text-white sm:px-8">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-emerald-200">
+                  Listing Management
+                </p>
+
+                <h2 className="mt-2 text-2xl font-black">
+                  Edit Equipment
+                </h2>
+
+                <p className="mt-1 text-sm text-emerald-100">
+                  Update the details of your rental listing.
+                </p>
+              </div>
 
               <button
                 type="button"
-                onClick={() => setEditing(null)}
+                onClick={cancelEdit}
                 disabled={busy}
-                className="text-sm font-semibold text-slate-500"
+                className="rounded-full border border-white/30 px-5 py-2 text-sm font-bold transition hover:bg-white/10 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -385,33 +599,35 @@ export default function OwnerEquipmentPage() {
 
             <form
               onSubmit={saveChanges}
-              className="grid gap-5 sm:grid-cols-2"
+              className="grid gap-6 p-6 sm:grid-cols-2 sm:p-8"
             >
-              <label className="text-sm font-semibold">
-                Equipment Name
+              <label className={labelStyle}>
+                Equipment Name *
                 <input
                   name="name"
                   value={form.name}
                   onChange={handleChange}
                   required
                   minLength={3}
-                  className="mt-2 w-full rounded-xl border p-3 font-normal"
+                  className={inputStyle}
                 />
               </label>
 
-              <label className="text-sm font-semibold">
-                Category
+              <label className={labelStyle}>
+                Category *
                 <select
                   name="category"
                   value={form.category}
                   onChange={handleChange}
-                  className="mt-2 w-full rounded-xl border bg-white p-3 font-normal"
+                  required
+                  className={inputStyle}
                 >
                   {!categories.includes(form.category) && (
                     <option value={form.category}>
                       {form.category}
                     </option>
                   )}
+
                   {categories.map((category) => (
                     <option key={category} value={category}>
                       {category}
@@ -420,32 +636,73 @@ export default function OwnerEquipmentPage() {
                 </select>
               </label>
 
-              <label className="text-sm font-semibold">
-                Location
+              <label className={labelStyle}>
+                Brand
+                <input
+                  name="brand"
+                  value={form.brand}
+                  onChange={handleChange}
+                  placeholder="e.g. Canon"
+                  className={inputStyle}
+                />
+              </label>
+
+              <label className={labelStyle}>
+                Model
+                <input
+                  name="model"
+                  value={form.model}
+                  onChange={handleChange}
+                  placeholder="e.g. EOS R50"
+                  className={inputStyle}
+                />
+              </label>
+
+              <label className={labelStyle}>
+                Condition
+                <select
+                  name="condition"
+                  value={form.condition}
+                  onChange={handleChange}
+                  className={inputStyle}
+                >
+                  {conditions.map((condition) => (
+                    <option key={condition} value={condition}>
+                      {condition.charAt(0).toUpperCase() +
+                        condition.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className={labelStyle}>
+                Location *
                 <input
                   name="location"
                   value={form.location}
                   onChange={handleChange}
                   required
-                  className="mt-2 w-full rounded-xl border p-3 font-normal"
+                  placeholder="e.g. Dhaka"
+                  className={inputStyle}
                 />
               </label>
 
-              <label className="text-sm font-semibold">
-                Rental Type
+              <label className={labelStyle}>
+                Rental Type *
                 <select
                   name="rentalType"
                   value={form.rentalType}
                   onChange={handleChange}
-                  className="mt-2 w-full rounded-xl border bg-white p-3 font-normal"
+                  className={inputStyle}
                 >
                   <option value="daily">Daily</option>
-                  <option value="hourly">Hourly</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
                 </select>
               </label>
 
-              <label className="text-sm font-semibold">
-                Rental Price (BDT)
+              <label className={labelStyle}>
+                Rental Price (BDT) *
                 <input
                   name="rentalPrice"
                   type="number"
@@ -454,166 +711,319 @@ export default function OwnerEquipmentPage() {
                   value={form.rentalPrice}
                   onChange={handleChange}
                   required
-                  className="mt-2 w-full rounded-xl border p-3 font-normal"
+                  className={inputStyle}
                 />
+
+                <span className="mt-2 block text-xs font-normal text-slate-400">
+                  Price per {form.rentalType} rental period.
+                </span>
               </label>
 
-              <label className="text-sm font-semibold">
-                Available Quantity
+              <label className={labelStyle}>
+                Available Quantity *
                 <input
                   name="availableQuantity"
                   type="number"
-                  min="1"
+                  min="0"
                   step="1"
                   value={form.availableQuantity}
                   onChange={handleChange}
                   required
-                  className="mt-2 w-full rounded-xl border p-3 font-normal"
+                  className={inputStyle}
                 />
               </label>
 
-              <label className="text-sm font-semibold sm:col-span-2">
-                Description
+              <div className={labelStyle}>
+                Listing Availability
+                <label className="mt-2 flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4">
+                  <input
+                    name="availability"
+                    type="checkbox"
+                    checked={form.availability}
+                    onChange={handleChange}
+                    className="h-4 w-4 accent-emerald-800"
+                  />
+
+                  <span className="text-sm font-medium text-slate-700">
+                    Equipment available for rental
+                  </span>
+                </label>
+              </div>
+
+              <label className={`${labelStyle} sm:col-span-2`}>
+                Description *
                 <textarea
                   name="description"
                   rows={4}
                   value={form.description}
                   onChange={handleChange}
                   required
-                  className="mt-2 w-full rounded-xl border p-3 font-normal"
+                  className={inputStyle}
                 />
               </label>
 
-              <button
-                type="submit"
-                disabled={busy}
-                className="rounded-xl bg-emerald-900 px-6 py-3 font-semibold text-white disabled:opacity-50"
-              >
-                {busy ? "Saving..." : "Save Changes"}
-              </button>
+              <label className={`${labelStyle} sm:col-span-2`}>
+                Rental Terms
+                <textarea
+                  name="rentalTerms"
+                  rows={3}
+                  value={form.rentalTerms}
+                  onChange={handleChange}
+                  placeholder="e.g. Valid ID required. Return in original condition."
+                  className={inputStyle}
+                />
+              </label>
+
+              <div className="flex flex-wrap gap-3 border-t border-slate-100 pt-6 sm:col-span-2">
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className="rounded-full bg-emerald-900 px-8 py-3 text-sm font-bold text-white transition hover:bg-emerald-800 disabled:opacity-50"
+                >
+                  {busy ? "Saving Changes..." : "Save Changes"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  disabled={busy}
+                  className="rounded-full border border-slate-200 px-8 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
             </form>
           </section>
         )}
 
-        <section className="rounded-3xl border bg-white p-6 shadow-sm">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-xl font-bold">Your Listings</h2>
-            <span className="rounded-full bg-slate-100 px-4 py-2 text-sm">
-              {total} total
-            </span>
+        {/* Equipment Table */}
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-6 py-6 sm:px-8">
+            <div>
+              <h2 className="text-xl font-black text-slate-950">
+                Equipment Listings
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                View and manage all your rental equipment.
+              </p>
+            </div>
+
+            <Badge className="border-slate-200 bg-slate-100 text-slate-700">
+              {total} Total Listings
+            </Badge>
           </div>
 
           {loading ? (
-            <p className="py-12 text-center text-slate-500">
-              Loading equipment...
-            </p>
+            <div className="py-20 text-center">
+              <div className="mx-auto h-9 w-9 animate-spin rounded-full border-4 border-emerald-100 border-t-emerald-800" />
+
+              <p className="mt-5 text-sm font-medium text-slate-500">
+                Loading your equipment...
+              </p>
+            </div>
           ) : items.length === 0 ? (
-            <div className="py-12 text-center">
-              <h3 className="text-xl font-bold">No equipment found</h3>
+            <div className="px-6 py-20 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50 text-3xl">
+                📦
+              </div>
+
+              <h3 className="mt-5 text-xl font-black text-slate-900">
+                No equipment found
+              </h3>
+
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+                You have no equipment listings on this page.
+                Add your first equipment to get started.
+              </p>
+
               <Link
                 href="/dashboard/owner/add-equipment"
-                className="mt-5 inline-block rounded-xl bg-emerald-900 px-5 py-3 font-semibold text-white"
+                className="mt-6 inline-flex rounded-full bg-emerald-900 px-6 py-3 text-sm font-bold text-white hover:bg-emerald-800"
               >
                 Add Equipment
               </Link>
             </div>
           ) : (
-            <div className="space-y-4">
-              {items.map((item) => (
-                <article
-                  key={item._id}
-                  className="flex flex-col gap-5 rounded-2xl border p-4 sm:flex-row sm:items-center"
-                >
-                  <div className="h-32 w-full shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:w-36">
-                    {item.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-slate-400">
-                        No image
-                      </div>
-                    )}
-                  </div>
+            <div className="w-full overflow-x-auto">
+              <table className="w-full min-w-[1050px] border-collapse text-left">
+                <thead className="bg-slate-50">
+                  <tr className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                    <th className="px-6 py-4">Equipment</th>
+                    <th className="px-5 py-4">Rental Price</th>
+                    <th className="px-5 py-4">Quantity</th>
+                    <th className="px-5 py-4">Availability</th>
+                    <th className="px-5 py-4">Approval</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
+                  </tr>
+                </thead>
 
-                  <div className="min-w-0 flex-1">
-                    <span
-                      className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusColor(item.status)}`}
-                    >
-                      {item.status || "pending"}
-                    </span>
+                <tbody className="divide-y divide-slate-100">
+                  {items.map((item) => {
+                    const availability = availabilityInfo(item);
 
-                    <h3 className="mt-3 text-lg font-bold">{item.name}</h3>
+                    const canView =
+                      item.status === "approved" &&
+                      item.availability !== false &&
+                      Number(item.availableQuantity ?? 1) > 0;
 
-                    <p className="text-sm text-slate-500">
-                      {item.category} · {item.location}
-                    </p>
+                    return (
+                      <tr
+                        key={item._id}
+                        className="transition hover:bg-slate-50/80"
+                      >
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-4">
+                            <div className="h-20 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-100">
+                              {item.image ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-full items-center justify-center text-xs text-slate-400">
+                                  No image
+                                </div>
+                              )}
+                            </div>
 
-                    <p className="mt-2 font-bold text-emerald-900">
-                      ৳{Number(priceOf(item)).toLocaleString("en-BD")}
-                      <span className="text-sm font-normal text-slate-500">
-                        {" "}/ {item.rentalType || "daily"}
-                      </span>
-                    </p>
+                            <div className="min-w-0">
+                              <p className="max-w-56 truncate font-bold text-slate-900">
+                                {item.name}
+                              </p>
 
-                    <p className="mt-1 text-xs text-slate-500">
-                      Quantity: {item.availableQuantity ?? 1}
-                    </p>
-                  </div>
+                              <p className="mt-1 text-xs text-slate-500">
+                                {item.brand || "No brand"}
+                                {item.model ? ` · ${item.model}` : ""}
+                              </p>
 
-                  <div className="flex gap-2 sm:flex-col">
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => startEdit(item)}
-                      className="rounded-xl border border-emerald-700 px-5 py-2 text-sm font-semibold text-emerald-900 disabled:opacity-50"
-                    >
-                      Edit
-                    </button>
+                              <p className="mt-1 text-xs text-slate-400">
+                                {item.category} · {item.location}
+                              </p>
 
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => deleteItem(item)}
-                      className="rounded-xl border border-red-200 px-5 py-2 text-sm font-semibold text-red-700 disabled:opacity-50"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </article>
-              ))}
+                              <p className="mt-1 text-xs capitalize text-slate-400">
+                                {item.condition || "good"} condition
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-5 py-5">
+                          <p className="whitespace-nowrap font-black text-emerald-900">
+                            ৳{formatPrice(priceOf(item))}
+                          </p>
+
+                          <p className="mt-1 text-xs capitalize text-slate-500">
+                            Per {item.rentalType || "daily"}
+                          </p>
+                        </td>
+
+                        <td className="px-5 py-5">
+                          <span className="text-sm font-bold text-slate-800">
+                            {item.availableQuantity ?? 1}
+                          </span>
+
+                          <p className="mt-1 text-xs text-slate-400">
+                            Units
+                          </p>
+                        </td>
+
+                        <td className="px-5 py-5">
+                          <Badge className={availability.color}>
+                            {availability.label}
+                          </Badge>
+                        </td>
+
+                        <td className="px-5 py-5">
+                          <Badge
+                            className={approvalColor(item.status)}
+                          >
+                            {item.status || "pending"}
+                          </Badge>
+                        </td>
+
+                        <td className="px-6 py-5">
+                          <div className="flex items-center justify-end gap-2">
+                            {canView && (
+                              <Link
+                                href={`/equipment/${item._id}`}
+                                className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-100"
+                              >
+                                View
+                              </Link>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => startEdit(item)}
+                              disabled={busy}
+                              className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-100 disabled:opacity-50"
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => deleteItem(item)}
+                              disabled={busy}
+                              className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-50"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
 
+          {/* Pagination */}
           {!loading && totalPages > 1 && (
-            <div className="mt-8 flex items-center justify-center gap-4">
-              <button
-                type="button"
-                disabled={page <= 1 || busy}
-                onClick={() => changePage(page - 1)}
-                className="rounded-xl border px-4 py-2 disabled:opacity-40"
-              >
-                Previous
-              </button>
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 px-6 py-5 sm:px-8">
+              <p className="text-sm text-slate-500">
+                Page{" "}
+                <span className="font-bold text-slate-900">
+                  {page}
+                </span>{" "}
+                of{" "}
+                <span className="font-bold text-slate-900">
+                  {totalPages}
+                </span>
+              </p>
 
-              <span className="text-sm">
-                Page {page} of {totalPages}
-              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  disabled={page <= 1 || busy}
+                  onClick={() => changePage(page - 1)}
+                  className="rounded-full border border-slate-200 px-5 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Previous
+                </button>
 
-              <button
-                type="button"
-                disabled={page >= totalPages || busy}
-                onClick={() => changePage(page + 1)}
-                className="rounded-xl border px-4 py-2 disabled:opacity-40"
-              >
-                Next
-              </button>
+                <button
+                  type="button"
+                  disabled={page >= totalPages || busy}
+                  onClick={() => changePage(page + 1)}
+                  className="rounded-full bg-emerald-900 px-5 py-2 text-sm font-bold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           )}
         </section>
+
+        <p className="mt-6 text-center text-xs text-slate-400">
+          Equipment availability and approval are managed separately.
+          Only approved, available listings with stock show a public
+          View Details action.
+        </p>
       </div>
     </main>
   );

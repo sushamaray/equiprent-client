@@ -4,9 +4,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import SuccessToast from "@/components/SuccessToast";
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+function GoogleBadge() {
+  return (
+    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-50 text-base font-extrabold text-[#174f43]">
+      G
+    </span>
+  );
+}
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -23,6 +32,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   function updateForm(event) {
     const { name, value } = event.target;
@@ -75,8 +85,10 @@ export default function RegisterPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (loading || googleLoading) return;
 
     setError("");
+    setSuccess("");
 
     const validationError = validateForm();
 
@@ -117,9 +129,16 @@ export default function RegisterPage() {
         );
       }
 
+      setSuccess(
+        "Account created successfully! Redirecting to sign in...",
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 850));
+
       router.push("/sign-in?registered=true");
       router.refresh();
     } catch (cause) {
+      setSuccess("");
       setError(
         cause instanceof Error
           ? cause.message
@@ -131,10 +150,23 @@ export default function RegisterPage() {
   }
 
   async function handleGoogleSignUp() {
+    if (loading || googleLoading) return;
+
     setError("");
+    setSuccess("");
     setGoogleLoading(true);
 
     try {
+      const callbackURL = new URL(
+        "/dashboard/profile",
+        window.location.origin,
+      ).href;
+
+      const errorCallbackURL = new URL(
+        "/sign-in?oauthError=true",
+        window.location.origin,
+      ).href;
+
       const response = await fetch(
         `${API_URL}/api/auth/sign-in/social`,
         {
@@ -145,14 +177,15 @@ export default function RegisterPage() {
           },
           body: JSON.stringify({
             provider: "google",
-            callbackURL: "/dashboard/profile",
+            callbackURL,
+            errorCallbackURL,
           }),
         },
       );
 
       const data = await response.json().catch(() => ({}));
 
-      if (!response.ok) {
+      if (!response.ok || !data.url) {
         throw new Error(
           data.message ||
             data.error?.message ||
@@ -160,67 +193,67 @@ export default function RegisterPage() {
         );
       }
 
-      if (!data.url) {
-        throw new Error("Google authorization URL was not returned.");
-      }
-
       const url = new URL(data.url);
 
-      if (
-        url.protocol !== "https:" ||
-        !["accounts.google.com", "accounts.google.com"].includes(
-          url.hostname,
-        )
-      ) {
+      if (url.protocol !== "https:") {
         throw new Error("Unexpected Google authorization URL.");
       }
 
-      window.location.assign(url.toString());
+      window.location.assign(url.href);
     } catch (cause) {
       setError(
         cause instanceof Error
           ? cause.message
           : "Google sign-up failed.",
       );
-
       setGoogleLoading(false);
     }
   }
 
   const busy = loading || googleLoading;
 
+  const inputClass =
+    "mt-2 w-full rounded-xl border border-[#dfe5df] bg-[#fafbf9] px-4 py-3.5 text-sm font-normal outline-none transition focus:border-[#174f43] focus:ring-2 focus:ring-[#174f43]/10";
+
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f7f8f5] px-4 py-12 text-slate-900">
-      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-7 shadow-sm sm:p-10">
+    <main
+      className="flex min-h-screen items-center justify-center bg-[#f7f8f6] px-4 py-12 text-[#17231f]"
+      style={{ fontFamily: '"Segoe UI", Arial, sans-serif' }}
+    >
+      <SuccessToast message={success} />
+
+      <section className="w-full max-w-[470px] rounded-3xl border border-[#e5eae5] bg-white p-7 shadow-[0_12px_45px_rgba(20,45,35,0.05)] sm:p-10">
         <Link
           href="/"
-          className="text-2xl font-extrabold tracking-tight text-emerald-900"
+          className="inline-block text-[25px] font-extrabold tracking-[-1.5px] text-[#174f43]"
         >
-          EquipRent<span className="text-amber-500">.</span>
+          EquipRent<span className="text-[#df704b]">.</span>
         </Link>
 
-        <p className="mt-8 text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">
-          Join EquipRent
-        </p>
+        <div className="mb-8 mt-10">
+          <p className="mb-3 text-[10px] font-bold tracking-[2.5px] text-[#d97752]">
+            JOIN EQUIPRENT
+          </p>
 
-        <h1 className="mt-2 text-3xl font-bold tracking-tight">
-          Create your account
-        </h1>
+          <h1 className="text-[32px] font-bold tracking-[-1.4px] sm:text-[36px]">
+            Create your account
+          </h1>
 
-        <p className="mt-3 text-sm leading-6 text-slate-600">
-          Discover quality equipment and rent what you need.
-        </p>
+          <p className="mt-3 text-sm leading-6 text-[#758079]">
+            Discover quality equipment and rent what you need.
+          </p>
+        </div>
 
         {error && (
-          <p
+          <div
             role="alert"
-            className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+            className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
           >
             {error}
-          </p>
+          </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <label className="block text-sm font-semibold">
             Full Name
             <input
@@ -233,7 +266,7 @@ export default function RegisterPage() {
               value={form.name}
               onChange={updateForm}
               placeholder="Your full name"
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 font-normal outline-none focus:border-emerald-700"
+              className={inputClass}
             />
           </label>
 
@@ -247,7 +280,7 @@ export default function RegisterPage() {
               value={form.email}
               onChange={updateForm}
               placeholder="you@example.com"
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 font-normal outline-none focus:border-emerald-700"
+              className={inputClass}
             />
           </label>
 
@@ -260,27 +293,25 @@ export default function RegisterPage() {
               value={form.image}
               onChange={updateForm}
               placeholder="https://example.com/photo.jpg"
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 font-normal outline-none focus:border-emerald-700"
+              className={inputClass}
             />
-
-            <span className="mt-2 block text-xs font-normal text-slate-500">
+            <span className="mt-2 block text-xs font-normal text-[#758079]">
               Optional. Use a publicly accessible HTTPS image URL.
             </span>
           </label>
 
           {form.image && (
-            <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
+            <div className="flex items-center gap-3 rounded-xl bg-[#f3f7f2] p-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={form.image}
                 alt="Profile preview"
-                className="h-14 w-14 rounded-full bg-slate-200 object-cover"
+                className="h-14 w-14 rounded-full bg-[#e3e9e3] object-cover"
                 onError={(event) => {
                   event.currentTarget.style.visibility = "hidden";
                 }}
               />
-
-              <span className="text-xs text-slate-600">
+              <span className="text-xs text-[#758079]">
                 Profile photo preview
               </span>
             </div>
@@ -297,10 +328,9 @@ export default function RegisterPage() {
               value={form.password}
               onChange={updateForm}
               placeholder="At least 8 characters"
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 font-normal outline-none focus:border-emerald-700"
+              className={inputClass}
             />
-
-            <span className="mt-2 block text-xs font-normal text-slate-500">
+            <span className="mt-2 block text-xs font-normal text-[#758079]">
               Must include uppercase and lowercase letters.
             </span>
           </label>
@@ -316,18 +346,18 @@ export default function RegisterPage() {
               value={form.confirmPassword}
               onChange={updateForm}
               placeholder="Enter your password again"
-              className="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 font-normal outline-none focus:border-emerald-700"
+              className={inputClass}
             />
           </label>
 
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-slate-600">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-[#758079]">
             <input
               type="checkbox"
               checked={showPassword}
               onChange={(event) =>
                 setShowPassword(event.target.checked)
               }
-              className="h-4 w-4 accent-emerald-800"
+              className="h-4 w-4 accent-[#174f43]"
             />
             Show Password
           </label>
@@ -335,15 +365,19 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={busy}
-            className="w-full rounded-xl bg-emerald-900 px-6 py-4 font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex min-h-[56px] w-full items-center justify-center rounded-xl bg-[#174f43] px-5 py-4 text-sm font-bold text-white shadow-[0_6px_18px_rgba(23,79,67,0.14)] transition hover:bg-[#236959] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? "Creating account..." : "Create Account"}
+            {success
+              ? "Redirecting..."
+              : loading
+                ? "Creating account..."
+                : "Create Account"}
           </button>
         </form>
 
         <div className="my-6 flex items-center gap-4">
           <div className="h-px flex-1 bg-slate-200" />
-          <span className="text-xs font-medium text-slate-400">
+          <span className="text-xs font-medium text-[#758079]">
             OR
           </span>
           <div className="h-px flex-1 bg-slate-200" />
@@ -353,31 +387,33 @@ export default function RegisterPage() {
           type="button"
           onClick={handleGoogleSignUp}
           disabled={busy}
-          className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-5 py-4 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+          className="flex min-h-[56px] w-full items-center justify-center gap-3 rounded-xl border border-[#dfe5df] bg-[#f7faf7] px-5 py-4 text-sm font-bold text-[#174f43] transition hover:bg-[#eff5f0] disabled:opacity-60"
         >
-          <span className="text-lg font-bold text-blue-600">G</span>
+          <GoogleBadge />
           {googleLoading
             ? "Connecting to Google..."
             : "Continue with Google"}
         </button>
 
-        <p className="mt-7 text-center text-sm text-slate-600">
+        <p className="mt-7 text-center text-sm text-[#758079]">
           Already have an account?{" "}
           <Link
             href="/sign-in"
-            className="font-bold text-emerald-800 hover:underline"
+            className="font-bold text-[#174f43] hover:underline"
           >
             Sign in
           </Link>
         </p>
 
-        <Link
-          href="/"
-          className="mt-5 block text-center text-xs font-medium text-slate-500 hover:text-emerald-800"
-        >
-          Back to Home
-        </Link>
-      </div>
+        <div className="mt-8 border-t border-[#edf0ed] pt-6 text-center">
+          <Link
+            href="/"
+            className="text-xs font-semibold text-[#758079] hover:text-[#174f43]"
+          >
+            ← Back to Home
+          </Link>
+        </div>
+      </section>
     </main>
   );
 }

@@ -1,5 +1,6 @@
 
 "use client";
+import Navbar from "@/components/Navbar";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -334,63 +335,7 @@ export default function Home() {
   return (
     <main className="home-page">
 
-      {/* NAVIGATION */}
-      <header className="home-header">
-        <Link href="/" className="home-brand">
-          EquipRent<span>.</span>
-        </Link>
-
-        <nav className="home-navigation">
-          <Link href="/" className="active">
-            Home
-          </Link>
-
-          <Link href="/equipment">
-            All Equipment
-          </Link>
-
-          <a href="#how-it-works">
-            How it works
-          </a>
-
-          <a href="#about">
-            About us
-          </a>
-        </nav>
-
-        <div className="home-nav-actions">
-          {auth.token ? (
-            <>
-              <Link
-                href="/dashboard"
-                className="nav-dashboard"
-              >
-                Dashboard
-              </Link>
-
-              <button
-                className="nav-login"
-                onClick={logout}
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <Link href="/sign-in" className="nav-login">
-                Login
-              </Link>
-
-              <Link
-                href="/register"
-                className="nav-register"
-              >
-                Get started <span>↗</span>
-              </Link>
-            </>
-          )}
-        </div>
-      </header>
+      {/* PREMIUM NAVBAR */}<Navbar />
 
       {/* HERO / BANNER */}
       <section className="home-hero">
