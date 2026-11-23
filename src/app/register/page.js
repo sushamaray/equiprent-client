@@ -17,6 +17,9 @@ function GoogleBadge() {
   );
 }
 
+const inputClass =
+  "mt-2 w-full rounded-xl border border-[#dfe5df] bg-[#fafbf9] px-4 py-3.5 text-sm font-normal outline-none transition focus:border-[#174f43] focus:ring-2 focus:ring-[#174f43]/10";
+
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -33,6 +36,8 @@ export default function RegisterPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  const busy = loading || googleLoading;
 
   function updateForm(event) {
     const { name, value } = event.target;
@@ -64,8 +69,8 @@ export default function RegisterPage() {
       }
     }
 
-    if (form.password.length < 8) {
-      return "Password must contain at least 8 characters.";
+    if (form.password.length < 6) {
+      return "Password must contain at least 6 characters.";
     }
 
     if (!/[A-Z]/.test(form.password)) {
@@ -85,7 +90,8 @@ export default function RegisterPage() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    if (loading || googleLoading) return;
+
+    if (busy) return;
 
     setError("");
     setSuccess("");
@@ -150,7 +156,7 @@ export default function RegisterPage() {
   }
 
   async function handleGoogleSignUp() {
-    if (loading || googleLoading) return;
+    if (busy) return;
 
     setError("");
     setSuccess("");
@@ -206,19 +212,17 @@ export default function RegisterPage() {
           ? cause.message
           : "Google sign-up failed.",
       );
+
       setGoogleLoading(false);
     }
   }
 
-  const busy = loading || googleLoading;
-
-  const inputClass =
-    "mt-2 w-full rounded-xl border border-[#dfe5df] bg-[#fafbf9] px-4 py-3.5 text-sm font-normal outline-none transition focus:border-[#174f43] focus:ring-2 focus:ring-[#174f43]/10";
-
   return (
     <main
       className="flex min-h-screen items-center justify-center bg-[#f7f8f6] px-4 py-12 text-[#17231f]"
-      style={{ fontFamily: '"Segoe UI", Arial, sans-serif' }}
+      style={{
+        fontFamily: '"Segoe UI", Arial, sans-serif',
+      }}
     >
       <SuccessToast message={success} />
 
@@ -227,7 +231,8 @@ export default function RegisterPage() {
           href="/"
           className="inline-block text-[25px] font-extrabold tracking-[-1.5px] text-[#174f43]"
         >
-          EquipRent<span className="text-[#df704b]">.</span>
+          EquipRent
+          <span className="text-[#df704b]">.</span>
         </Link>
 
         <div className="mb-8 mt-10">
@@ -253,7 +258,10 @@ export default function RegisterPage() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-5"
+        >
           <label className="block text-sm font-semibold">
             Full Name
             <input
@@ -295,6 +303,7 @@ export default function RegisterPage() {
               placeholder="https://example.com/photo.jpg"
               className={inputClass}
             />
+
             <span className="mt-2 block text-xs font-normal text-[#758079]">
               Optional. Use a publicly accessible HTTPS image URL.
             </span>
@@ -311,6 +320,7 @@ export default function RegisterPage() {
                   event.currentTarget.style.visibility = "hidden";
                 }}
               />
+
               <span className="text-xs text-[#758079]">
                 Profile photo preview
               </span>
@@ -324,14 +334,16 @@ export default function RegisterPage() {
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
               required
-              minLength={8}
+              minLength={6}
               value={form.password}
               onChange={updateForm}
-              placeholder="At least 8 characters"
+              placeholder="At least 6 characters"
               className={inputClass}
             />
+
             <span className="mt-2 block text-xs font-normal text-[#758079]">
-              Must include uppercase and lowercase letters.
+              Minimum 6 characters, including uppercase and
+              lowercase letters.
             </span>
           </label>
 
@@ -342,7 +354,7 @@ export default function RegisterPage() {
               type={showPassword ? "text" : "password"}
               autoComplete="new-password"
               required
-              minLength={8}
+              minLength={6}
               value={form.confirmPassword}
               onChange={updateForm}
               placeholder="Enter your password again"

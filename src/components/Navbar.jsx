@@ -1,8 +1,10 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const API =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -356,7 +358,7 @@ export default function Navbar() {
             })}
           </nav>
 
-          <div className="hidden shrink-0 items-center gap-2 xl:flex">
+          <div className="ml-auto hidden shrink-0 items-center gap-2 xl:flex">
             {loading ? (
               <div className="h-11 w-44 animate-pulse rounded-xl bg-[#e7ece8]" />
             ) : user ? (
@@ -415,25 +417,33 @@ export default function Navbar() {
                 </Link>
               </div>
             )}
+
+            {/* Theme icon is the rightmost desktop control. */}
+            <ThemeToggle />
           </div>
 
-          <button
-            type="button"
-            aria-label={
-              menuOpen ? "Close menu" : "Open menu"
-            }
-            aria-expanded={menuOpen}
-            aria-controls="equiprent-mobile-menu"
-            onClick={() =>
-              setMenuOpen((value) => !value)
-            }
-            className="flex h-11 w-11 items-center justify-center rounded-[13px] border border-[#dce6de] bg-white text-[#174f43] shadow-sm transition hover:bg-[#eef4ef] xl:hidden"
-          >
-            <Icon
-              name={menuOpen ? "close" : "menu"}
-              size={21}
-            />
-          </button>
+          <div className="ml-auto flex shrink-0 items-center gap-2 xl:hidden">
+            {/* Theme icon stays beside the hamburger on mobile. */}
+            <ThemeToggle />
+
+            <button
+              type="button"
+              aria-label={
+                menuOpen ? "Close menu" : "Open menu"
+              }
+              aria-expanded={menuOpen}
+              aria-controls="equiprent-mobile-menu"
+              onClick={() =>
+                setMenuOpen((value) => !value)
+              }
+              className="flex h-11 w-11 items-center justify-center rounded-[13px] border border-[#dce6de] bg-white text-[#174f43] shadow-sm transition hover:bg-[#eef4ef]"
+            >
+              <Icon
+                name={menuOpen ? "close" : "menu"}
+                size={21}
+              />
+            </button>
+          </div>
         </div>
 
         {menuOpen && (
